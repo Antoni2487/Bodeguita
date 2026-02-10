@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{admin/layout :: layout(
+        title='Solicitudes de Bodegueros', 
+        content=~{::content},
+        styles=~{::styles},
+        scripts=~{::scripts}
+      )}">
+<body>
+
+    <th:block th:fragment="styles">
+        <style>
+            /* Estilos heredados y ajustados para Cards */
+            .page-header-custom {
+                margin-bottom: 2rem;
+            }
+
+            /* Estilo de las pestañas (Igual a usuarios) */
+            .nav-tabs-custom {
+                border-bottom: 2px solid #E5E7EB;
+                margin-bottom: 1.5rem;
+            }
+            
+            .nav-tabs-custom .nav-link {
+                border: none;
+                color: #6B7280;
+                font-weight: 600;
+                padding: 0.75rem 1.5rem;
+                transition: all 0.3s;
+            }
+            
+            .nav-tabs-custom .nav-link:hover {
+                color: #1E3A8A;
+                background-color: #F3F4F6;
+            }
+            
+            .nav-tabs-custom .nav-link.active {
+                color: #1E3A8A;
+                background-color: transparent;
+                border-bottom: 3px solid #1E3A8A;
+            }
+
+            /* ESTILOS DE LA TARJETA (PILA) */
+            .solicitud-card {
+                transition: transform 0.2s, box-shadow 0.2s;
+                border: none;
+                border-radius: 12px;
+                overflow: hidden;
+            }
+
+            .solicitud-card:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
+            }
+
+            /* Bordes de color según estado */
+            .border-start-pending { border-left: 5px solid #F59E0B !important; }
+            .border-start-approved { border-left: 5px solid #10B981 !important; }
+            .border-start-rejected { border-left: 5px solid #EF4444 !important; }
+
+            .card-header-icon {
+                width: 45px;
+                height: 45px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 1.2rem;
+                color: white;
+            }
+
+            .bg-icon-pending { background: linear-gradient(135deg, #F59E0B, #D97706); }
+            .bg-icon-approved { background: linear-gradient(135deg, #10B981, #059669); }
+            .bg-icon-rejected { background: linear-gradient(135deg, #EF4444, #DC2626); }
+
+            .info-label {
+                font-size: 0.75rem;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                color: #6B7280;
+                font-weight: 700;
+            }
+
+            .info-value {
+                font-size: 0.95rem;
+                color: #1F2937;
+                font-weight: 500;
+            }
+
+            /* Estado vacío */
+            .empty-state {
+                text-align: center;
+                padding: 4rem 2rem;
+                color: #9CA3AF;
+            }
+            .empty-state i {
+                font-size: 3rem;
+                margin-bottom: 1rem;
+                display: block;
+            }
+        </style>
+    </th:block>
+
+    <div th:fragment="content">
+        
+        <div class="page-header-custom d-flex align-items-center justify-content-between">
+            <div>
+                <h2 class="fw-bold mb-2">
+                    <i class="bi bi-inbox-fill me-2" style="color: #1E3A8A;"></i> 
+                    Solicitudes de Afiliación
+                </h2>
+                <p class="text-muted mb-0">Gestiona las solicitudes de nuevas bodegas</p>
+            </div>
+            <div>
+                <button class="btn btn-outline-primary" onclick="cargarSolicitudes()">
+                    <i class="bi bi-arrow-clockwise me-1"></i> Actualizar
+                </button>
+            </div>
+        </div>
+
+        <div id="alertPlaceholder"></div>
+
+        <ul class="nav nav-tabs nav-tabs-custom" id="solicitudTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="tab-pendientes" data-bs-toggle="tab" data-bs-target="#pane-pendientes" type="button" role="tab" onclick="filtrarSolicitudes('PENDIENTE')">
+                    <i class="bi bi-hourglass-split me-2"></i>Pendientes
+                    <span class="badge bg-warning text-dark ms-2 rounded-pill" id="badge-pendientes">0</span>
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="tab-aprobadas" data-bs-toggle="tab" data-bs-target="#pane-aprobadas" type="button" role="tab" onclick="filtrarSolicitudes('APROBADA')">
+                    <i class="bi bi-check-circle-fill me-2"></i>Aprobadas
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="tab-rechazadas" data-bs-toggle="tab" data-bs-target="#pane-rechazadas" type="button" role="tab" onclick="filtrarSolicitudes('RECHAZADA')">
+                    <i class="bi bi-x-circle-fill me-2"></i>Rechazadas
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content pt-2">
+            
+            <div id="loader" class="text-center py-5">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Cargando...</span>
+                </div>
+                <p class="mt-2 text-muted">Cargando solicitudes...</p>
+            </div>
+
+            <div id="solicitudesContainer" class="row g-4" style="display: none;">
+                </div>
+            
+            <div id="emptyState" class="empty-state" style="display: none;">
+                <i class="bi bi-inbox"></i>
+                <h4>No hay solicitudes en esta sección</h4>
+                <p>Las nuevas solicitudes aparecerán aquí.</p>
+            </div>
+        </div>
+
+    </div>
+
+    <th:block th:fragment="scripts">
+        <script th:src="@{/js/admin/solicitudes.js}"></script>
+    </th:block>
+
+</body>
+</html>

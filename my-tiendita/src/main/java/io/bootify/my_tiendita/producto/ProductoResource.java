@@ -1,8 +1,11 @@
 package io.bootify.my_tiendita.producto;
 
+import io.bootify.my_tiendita.categoria.CategoriaService;
+import io.bootify.my_tiendita.subcategoria.SubcategoriaService;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.validation.Valid;
 import java.util.List;
+import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -21,9 +24,15 @@ import org.springframework.web.bind.annotation.RestController;
 public class ProductoResource {
 
     private final ProductoService productoService;
+    private final CategoriaService categoriaService;
+    private final SubcategoriaService subcategoriaService;
 
-    public ProductoResource(final ProductoService productoService) {
+    public ProductoResource(final ProductoService productoService,
+            final CategoriaService categoriaService,
+            final SubcategoriaService subcategoriaService) {
         this.productoService = productoService;
+        this.categoriaService = categoriaService;
+        this.subcategoriaService = subcategoriaService;
     }
 
     @GetMapping
@@ -55,6 +64,19 @@ public class ProductoResource {
     public ResponseEntity<Void> deleteProducto(@PathVariable(name = "id") final Long id) {
         productoService.delete(id);
         return ResponseEntity.noContent().build();
+    }
+
+    // Endpoints útiles para formularios - obtener categorías para dropdown
+    @GetMapping("/form-data/categorias")
+    public ResponseEntity<Map<Long, String>> getCategoriasForForm() {
+        return ResponseEntity.ok(categoriaService.getCategoriaValues());
+    }
+
+    // Obtener subcategorías filtradas por categoría para dropdown
+    @GetMapping("/form-data/subcategorias/categoria/{categoriaId}")
+    public ResponseEntity<Map<Long, String>> getSubcategoriasForForm(
+            @PathVariable(name = "categoriaId") final Long categoriaId) {
+        return ResponseEntity.ok(subcategoriaService.getSubcategoriaValuesByCategoriaId(categoriaId));
     }
 
 }

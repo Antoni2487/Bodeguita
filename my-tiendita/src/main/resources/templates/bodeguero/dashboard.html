@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{bodeguero/layout :: layout(
+        title=${title},
+        content=~{::content},
+        styles=~{::styles},
+        scripts=~{::scripts},
+        modals=~{::modals}
+      )}">
+
+<head>
+    <!-- ====== ESTILOS ====== -->
+    <th:block th:fragment="styles">
+      <link rel="stylesheet" th:href="@{/css/bodeguero/styles.css}" />
+    </th:block>
+</head>
+
+<!-- ====== CONTENIDO PRINCIPAL ====== -->
+<th:block th:fragment="content">
+
+  <div class="bdg-page-title">
+    <div>
+      <h2>Hola, 
+        <span th:text="${nombreBodeguero}">Bodeguero</span> 
+      </h2>
+      <p class="text-muted mb-0">
+        Este es el resumen de tu bodega hoy.
+      </p>
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="row g-4 mb-4">
+    <div class="col-12 col-md-6 col-xl-3">
+      <div class="bdg-kpi-card kpi-primary">
+        <div class="bdg-kpi-icon">
+          <i class="bi bi-box-seam"></i>
+        </div>
+        <div class="bdg-kpi-content">
+          <div class="bdg-kpi-title">Mis productos</div>
+          <div class="bdg-kpi-value" th:text="${totalProductos}">0</div>
+          <div class="bdg-kpi-sub">Productos activos en esta bodega</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 col-md-6 col-xl-3">
+      <div class="bdg-kpi-card kpi-warning">
+        <div class="bdg-kpi-icon">
+          <i class="bi bi-exclamation-triangle"></i>
+        </div>
+        <div class="bdg-kpi-content">
+          <div class="bdg-kpi-title">Bajo stock</div>
+          <div class="bdg-kpi-value" th:text="${productosBajoStock}">0</div>
+          <div class="bdg-kpi-sub">Productos que requieren atención</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 col-md-6 col-xl-3">
+      <div class="bdg-kpi-card kpi-info">
+        <div class="bdg-kpi-icon">
+          <i class="bi bi-truck"></i>
+        </div>
+        <div class="bdg-kpi-content">
+          <div class="bdg-kpi-title">Pedidos pendientes</div>
+          <div class="bdg-kpi-value" th:text="${pedidosPendientes}">0</div>
+          <div class="bdg-kpi-sub">Pedidos por preparar o entregar</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 col-md-6 col-xl-3">
+      <div class="bdg-kpi-card kpi-success">
+        <div class="bdg-kpi-icon">
+          <i class="bi bi-currency-dollar"></i>
+        </div>
+        <div class="bdg-kpi-content">
+          <div class="bdg-kpi-title">Ventas hoy</div>
+          <div class="bdg-kpi-value">
+            S/ <span th:text="${#numbers.formatDecimal(ventasHoy, 1, 'POINT', 2, 'POINT')}">0.00</span>
+          </div>
+          <div class="bdg-kpi-sub">Total vendido en el día</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Paneles secundarios -->
+  <div class="row g-4">
+    <div class="col-12 col-xl-8">
+      <div class="card bdg-card-soft">
+        <div class="card-body">
+          <div class="bdg-section-title">Actividad reciente</div>
+          <div class="activity-placeholder">
+            <i class="bi bi-clock-history"></i>
+            <p class="mb-2">
+              <strong>Próximamente:</strong> Aquí verás tus últimos movimientos
+            </p>
+            <p class="text-muted small">
+              Movimientos de inventario, ventas y pedidos en tiempo real
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</th:block>
+
+<!-- ====== SCRIPTS ====== -->
+<th:block th:fragment="scripts">
+  <script>
+    console.log("✅ Dashboard Bodeguero cargado correctamente");
+  </script>
+</th:block>
+
+<!-- ====== MODALS (vacío por ahora) ====== -->
+<th:block th:fragment="modals">
+  <!-- Sin modales en esta página -->
+</th:block>
+
+</html>

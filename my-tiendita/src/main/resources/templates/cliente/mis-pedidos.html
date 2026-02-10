@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" 
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{cliente/layout}">
+
+<head>
+    <title>Mis Pedidos - Tu Bodeguita</title>
+</head>
+
+<body>
+    <div layout:fragment="content" class="py-5 bg-light">
+        <div class="container">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="fw-bold m-0"><i class="bi bi-clock-history me-2"></i> Mis Pedidos</h2>
+                <a href="/cliente/explorar" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-plus-lg"></i> Nuevo Pedido
+                </a>
+            </div>
+
+            <div id="alerta-exito" class="alert alert-success alert-dismissible fade show d-none" role="alert">
+                <i class="bi bi-check-circle-fill me-2"></i>
+                <strong>¡Pedido realizado con éxito!</strong> Tu bodega ya ha sido notificada.
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+
+            <div id="loader" class="text-center py-5">
+                <div class="spinner-border text-primary" role="status"></div>
+                <p class="mt-2 text-muted">Cargando tu historial...</p>
+            </div>
+
+            <div id="empty-state" class="text-center py-5 d-none">
+                <div class="mb-3">
+                    <i class="bi bi-bag-x display-1 text-muted opacity-50"></i>
+                </div>
+                <h4 class="fw-bold">Aún no tienes pedidos</h4>
+                <p class="text-muted">¡Explora las bodegas cercanas y haz tu primer pedido!</p>
+                <a href="/cliente/explorar" class="btn btn-primary mt-3 px-4 rounded-pill">Ir a Explorar</a>
+            </div>
+
+            <div id="lista-pedidos" class="row g-4">
+                </div>
+        </div>
+    </div>
+
+    <th:block layout:fragment="scripts">
+        <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // 1. Detectar si venimos de una compra exitosa
+            const urlParams = new URLSearchParams(window.location.search);
+            if(urlParams.get('exito') === 'true') {
+                document.getElementById('alerta-exito').classList.remove('d-none');
+                // Limpiar la URL para que al recargar no salga la alerta de nuevo
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+            cargarPedidos();
+        });
+
+        async function cargarPedidos() {
+            try {
+                const res = await fetch('/api/cliente/pedidos');
+                
+                if (res.status === 403 || res.status === 401) {
+                    window.location.href = '/login'; 
+                    return;
+                }
+
+                if(!res.ok) throw new Error("Error cargando pedidos");
+                
+                const pedidos = await res.json();
+                
+                document.getElementById('loader').classList.add('d-none');
+                
+                if(!pedidos || pedidos.length === 0) {
+                    document.getElementById('empty-state').classList.remove('d-none');
+                    return;
+                }
+
+                renderizarPedidos(pedidos);
+
+            } catch (e) {
+                console.error(e);
+                document.getElementById('loader').innerHTML = 
+                    '<div class="alert alert-danger">Ocurrió un error al cargar tus pedidos. Intenta recargar la página.</div>';
+            }
+        }
+
+        function renderizarPedidos(pedidos) {
+            const container = document.getElementById('lista-pedidos');
+            container.innerHTML = ''; // Limpiar contenedor por si acaso
+            
+            pedidos.forEach(p => {
+                // ✅ CORRECCIÓN CLAVE: Convertir a Número antes de usar toFixed
+                const montoTotal = Number(p.total) || 0; 
+
+                // Configuración visual según estado
+                let badgeClass = 'bg-secondary';
+                let icon = 'bi-circle';
+                let statusLabel = p.estado || 'DESCONOCIDO';
+
+                switch(p.estado) {
+                    case 'PENDIENTE': 
+                        badgeClass = 'bg-warning text-dark'; 
+                        icon = 'bi-hourglass-split';
+                        break;
+                    case 'EN_PREPARACION': 
+                        badgeClass = 'bg-info text-dark'; 
+                        icon = 'bi-box-seam';
+                        statusLabel = 'EN PREPARACIÓN';
+                        break;
+                    case 'EN_CAMINO': 
+                        badgeClass = 'bg-primary'; 
+                        icon = 'bi-bicycle';
+                        statusLabel = 'EN CAMINO';
+                        break;
+                    case 'ENTREGADO': 
+                    case 'COMPLETADA':
+                        badgeClass = 'bg-success'; 
+                        icon = 'bi-check-circle-fill';
+                        break;
+                    case 'CANCELADO': 
+                    case 'ANULADA':
+                        badgeClass = 'bg-danger'; 
+                        icon = 'bi-x-circle-fill';
+                        break;
+                }
+
+                // Formatear fecha de forma segura
+                let fechaStr = "Fecha desconocida";
+                if(p.fechaPedido) {
+                    try {
+                        const fechaObj = new Date(p.fechaPedido);
+                        fechaStr = fechaObj.toLocaleDateString() + ' ' + 
+                                   fechaObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                    } catch(e) { console.error("Error fecha", e); }
+                }
+
+                const direccion = p.direccionEntrega || "Sin dirección registrada";
+                const codigo = p.codigoPedido || "---";
+
+                const html = `
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card h-100 border-0 shadow-sm hover-shadow transition">
+                            <div class="card-header bg-white d-flex justify-content-between align-items-center py-3 border-bottom-0">
+                                <div>
+                                    <small class="text-muted d-block text-uppercase" style="font-size: 0.75rem;">Código</small>
+                                    <span class="fw-bold font-monospace">#${codigo}</span>
+                                </div>
+                                <span class="badge ${badgeClass} px-3 py-2 rounded-pill">
+                                    <i class="bi ${icon} me-1"></i> ${statusLabel}
+                                </span>
+                            </div>
+                            <div class="card-body pt-0">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="bg-light p-2 rounded me-3">
+                                        <i class="bi bi-shop fs-4 text-primary"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-0 fw-bold">Tu Bodega</h6>
+                                        <small class="text-muted">${fechaStr}</small>
+                                    </div>
+                                </div>
+
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-muted">Total pagado:</span>
+                                    <span class="fw-bold text-success">S/ ${montoTotal.toFixed(2)}</span>
+                                </div>
+                                
+                                <div class="d-flex justify-content-start align-items-start mb-3">
+                                    <i class="bi bi-geo-alt text-danger me-2 mt-1"></i>
+                                    <small class="text-muted text-truncate-2">
+                                        ${direccion}
+                                    </small>
+                                </div>
+
+                                <hr class="my-3 opacity-25">
+                                
+                                <div class="d-grid">
+                                    <button class="btn btn-outline-primary btn-sm fw-bold" onclick="alert('Detalle próximamente')">
+                                        VER DETALLES
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += html;
+            });
+        }
+    </script>
+        <style>
+            .hover-shadow:hover { transform: translateY(-3px); box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important; }
+            .transition { transition: all 0.3s ease; }
+            .text-truncate-2 {
+                display: -webkit-box;
+                -webkit-line-clamp: 2;
+                -webkit-box-orient: vertical;
+                overflow: hidden;
+            }
+        </style>
+    </th:block>
+</body>
+</html>

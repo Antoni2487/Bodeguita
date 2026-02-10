@@ -1,6 +1,8 @@
 package io.bootify.my_tiendita.categoria;
 
 import io.bootify.my_tiendita.producto.Producto;
+import io.bootify.my_tiendita.subcategoria.Subcategoria;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
@@ -39,6 +41,9 @@ public class Categoria {
 
     @OneToMany(mappedBy = "categoria")
     private Set<Producto> producto = new HashSet<>();
+
+    @OneToMany(mappedBy = "categoria", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<Subcategoria> subcategorias = new HashSet<>();
 
     @CreatedDate
     @Column(nullable = false, updatable = false)

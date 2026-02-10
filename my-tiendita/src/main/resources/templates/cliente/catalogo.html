@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" 
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{cliente/layout}">
+
+<head>
+    <title th:text="${bodega.nombre} + ' - Catálogo'">Catálogo</title>
+    <th:block layout:fragment="styles">
+        <style>
+            /* Cabecera de Bodega */
+            .bodega-header {
+                background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('https://images.unsplash.com/photo-1578916171728-46686eac8d58?q=80&w=1974&auto=format&fit=crop');
+                background-size: cover;
+                background-position: center;
+                color: white;
+                padding: 3rem 0;
+                margin-bottom: 2rem;
+                border-radius: 0 0 20px 20px;
+            }
+            
+            .bodega-info h1 {
+                font-weight: 800;
+                text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            }
+
+            /* Sidebar Categorías */
+            .categoria-link {
+                display: block;
+                padding: 10px 15px;
+                color: #555;
+                text-decoration: none;
+                border-radius: 8px;
+                transition: all 0.2s;
+                font-weight: 500;
+            }
+            
+            .categoria-link:hover {
+                background-color: #f8f9fa;
+                color: var(--brand-primary, #D91E6A);
+                transform: translateX(5px);
+            }
+            
+            .categoria-link.active {
+                background-color: var(--brand-primary, #D91E6A);
+                color: white;
+            }
+
+            /* Tarjeta de Producto */
+            .producto-card {
+                border: none;
+                border-radius: 15px;
+                transition: transform 0.2s, box-shadow 0.2s;
+                height: 100%;
+                background: white;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            }
+            
+            .producto-card:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            }
+            
+            .producto-img-wrapper {
+                height: 180px;
+                overflow: hidden;
+                border-radius: 15px 15px 0 0;
+                position: relative;
+                background: #f8f9fa;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            
+            .producto-img {
+                max-height: 100%;
+                max-width: 100%;
+                object-fit: contain;
+                padding: 10px;
+            }
+            
+            .precio-tag {
+                font-size: 1.25rem;
+                font-weight: 800;
+                color: var(--brand-primary, #D91E6A);
+            }
+            
+            .btn-add {
+                background-color: var(--brand-yellow, #FFD700);
+                color: #1A1A1A;
+                font-weight: 700;
+                border: none;
+                border-radius: 50px;
+                padding: 8px 20px;
+                transition: all 0.2s;
+            }
+            
+            .btn-add:hover {
+                background-color: #ffe44d;
+                transform: scale(1.05);
+            }
+
+            /* Badge de Stock */
+            .stock-badge {
+                position: absolute;
+                top: 10px;
+                right: 10px;
+                background: rgba(255,255,255,0.9);
+                padding: 4px 8px;
+                border-radius: 12px;
+                font-size: 0.75rem;
+                font-weight: 600;
+                color: #555;
+            }
+        </style>
+    </th:block>
+</head>
+
+<body>
+    <div layout:fragment="content">
+        
+        <div class="bodega-header">
+            <div class="container">
+                <div class="row align-items-center">
+                    <div class="col-md-8 bodega-info">
+                        <div class="d-flex align-items-center gap-3 mb-2">
+                            <span class="badge bg-success">Abierto</span>
+                            <small th:text="${bodega.horario}"><i class="bi bi-clock"></i> 8:00 AM - 10:00 PM</small>
+                        </div>
+                        <h1 th:text="${bodega.nombre}">Nombre Bodega</h1>
+                        <p class="mb-0 text-white-50">
+                            <i class="bi bi-geo-alt-fill text-warning"></i> 
+                            <span th:text="${bodega.direccion}">Dirección</span>
+                        </p>
+                    </div>
+                    <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                        <div class="bg-white text-dark p-3 rounded-4 d-inline-block shadow">
+                            <small class="d-block text-muted text-uppercase fw-bold" style="font-size: 0.7rem;">Tiempo Estimado</small>
+                            <span class="fs-4 fw-bold"><i class="bi bi-bicycle"></i> 15-30 min</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="container pb-5">
+            <div class="row">
+                
+                <div class="col-lg-3 d-none d-lg-block">
+                    <div class="sticky-top" style="top: 100px; z-index: 1;">
+                        <h5 class="fw-bold mb-3">Categorías</h5>
+                        <div class="list-group list-group-flush">
+                            <a th:href="@{/cliente/bodega/{id}(id=${bodega.id})}" 
+                               class="categoria-link" 
+                               th:classappend="${categoriaActiva == null} ? 'active' : ''">
+                                <i class="bi bi-grid-fill me-2"></i> Todos los productos
+                            </a>
+                            
+                            <a th:each="cat : ${categorias}" 
+                               th:href="@{/cliente/bodega/{id}(id=${bodega.id}, categoria=${cat.key})}"
+                               class="categoria-link"
+                               th:classappend="${categoriaActiva == cat.key} ? 'active' : ''">
+                                <span th:text="${cat.value}">Nombre Categoría</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12 d-lg-none mb-4">
+                    <div class="dropdown">
+                        <button class="btn btn-outline-dark w-100 dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-funnel-fill"></i> Filtrar por Categoría
+                        </button>
+                        <ul class="dropdown-menu w-100">
+                            <li><a class="dropdown-item" th:href="@{/cliente/bodega/{id}(id=${bodega.id})}">Todas</a></li>
+                            <li th:each="cat : ${categorias}">
+                                <a class="dropdown-item" 
+                                   th:href="@{/cliente/bodega/{id}(id=${bodega.id}, categoria=${cat.key})}"
+                                   th:text="${cat.value}">Categoría</a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="col-lg-9">
+                    
+                    <div th:if="${#lists.isEmpty(productos)}" class="text-center py-5">
+                        <img src="https://cdn-icons-png.flaticon.com/512/2038/2038854.png" width="100" class="mb-3 opacity-50">
+                        <h4>No hay productos disponibles</h4>
+                        <p class="text-muted">Intenta cambiar de categoría o vuelve más tarde.</p>
+                        <a th:href="@{/cliente/bodega/{id}(id=${bodega.id})}" class="btn btn-outline-primary mt-2">Ver todo</a>
+                    </div>
+
+                    <div class="row row-cols-2 row-cols-md-3 g-3 g-lg-4">
+                        <div class="col" th:each="prod : ${productos}">
+                            <div class="card producto-card h-100">
+                                <div class="producto-img-wrapper">
+                                    <span class="stock-badge">
+                                        <i class="bi bi-box-seam"></i> <span th:text="${prod.stock}">10</span>
+                                    </span>
+                                    <img th:src="${prod.productoImagen != null ? prod.productoImagen : '/images/placeholder-product.png'}" 
+                                         class="producto-img" 
+                                         alt="Producto">
+                                </div>
+                                <div class="card-body d-flex flex-column">
+                                    <small class="text-muted text-uppercase mb-1" style="font-size: 0.7rem;" th:text="${prod.categoriaNombre}">Categoría</small>
+                                    <h5 class="card-title fw-bold" style="font-size: 1rem;" th:text="${prod.productoNombre}">Nombre Producto</h5>
+                                    
+                                    <div class="mt-auto d-flex align-items-center justify-content-between pt-3">
+                                        <div class="precio-tag">
+                                            S/ <span th:text="${prod.precioBodeguero}">0.00</span>
+                                        </div>
+                                        <button class="btn btn-add shadow-sm" 
+                                                th:onclick="agregarAlCarrito(
+                                                    [[${prod.id}]], 
+                                                    [[${prod.productoNombre}]], 
+                                                    [[${prod.precioBodeguero}]], 
+                                                    [[${prod.stock}]],
+                                                    [[${prod.productoImagen}]],
+                                                    [[${bodega.id}]],
+                                                    [[${bodega.nombre}]]
+                                                )">
+                                            <i class="bi bi-plus-lg"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <th:block layout:fragment="scripts">
+        <script>
+            // Función para agregar al carrito (LocalStorage)
+            function agregarAlCarrito(id, nombre, precio, stock, imagen, bodegaId, bodegaNombre) {
+                // 1. Obtener carrito actual
+                let carrito = JSON.parse(localStorage.getItem('carrito')) || [];
+                
+                // 2. Validar Multibodega (Regla de Negocio: Solo una bodega a la vez)
+                if (carrito.length > 0 && carrito[0].bodegaId !== bodegaId) {
+                    if(!confirm(`Tu carrito tiene productos de "${carrito[0].bodegaNombre}". ¿Quieres vaciarlo para comprar en "${bodegaNombre}"?`)) {
+                        return;
+                    }
+                    carrito = []; // Vaciar si el usuario acepta
+                }
+
+                // 3. Buscar si ya existe el producto
+                const existente = carrito.find(item => item.id === id);
+
+                if (existente) {
+                    if (existente.cantidad < stock) {
+                        existente.cantidad++;
+                        mostrarToast('Cantidad actualizada', 'success');
+                    } else {
+                        mostrarToast('¡Stock máximo alcanzado!', 'warning');
+                        return;
+                    }
+                } else {
+                    carrito.push({
+                        id: id,
+                        nombre: nombre,
+                        precio: parseFloat(precio),
+                        cantidad: 1,
+                        stock: stock,
+                        imagen: imagen,
+                        bodegaId: bodegaId,
+                        bodegaNombre: bodegaNombre
+                    });
+                    mostrarToast('Producto agregado', 'success');
+                }
+
+                // 4. Guardar y actualizar UI
+                localStorage.setItem('carrito', JSON.stringify(carrito));
+                actualizarContadorCarrito(); // Definida en layout.html
+                animarBotonCarrito();
+            }
+
+            // Toast simple (si no usas Bootstrap Toasts, usa un alert o crea un div dinámico)
+            function mostrarToast(mensaje, tipo) {
+                // Implementación simple para demo, idealmente usar Toastify o Bootstrap Toast
+                const div = document.createElement('div');
+                div.className = `position-fixed bottom-0 end-0 p-3 mb-3 me-3 bg-${tipo} text-white rounded shadow`;
+                div.style.zIndex = 9999;
+                div.innerHTML = `<i class="bi bi-check-circle me-2"></i> ${mensaje}`;
+                document.body.appendChild(div);
+                setTimeout(() => div.remove(), 2000);
+            }
+
+            function animarBotonCarrito() {
+                const badge = document.getElementById('cart-counter');
+                if(badge) {
+                    badge.classList.add('animate__animated', 'animate__bounce');
+                    setTimeout(() => badge.classList.remove('animate__animated', 'animate__bounce'), 1000);
+                }
+            }
+        </script>
+    </th:block>
+</body>
+</html>

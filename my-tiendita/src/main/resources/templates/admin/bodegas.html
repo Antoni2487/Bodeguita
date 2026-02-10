@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{admin/layout :: layout(
+        title='Gestión de Bodegas',
+        content=~{::content},
+        styles=~{::styles},
+        scripts=~{::scripts}
+      )}">
+
+  <body>
+
+    <th:block th:fragment="styles">
+      <style>
+        h2 i { vertical-align: middle; }
+        .page-header-bodegas { margin-bottom: 2rem; }
+
+        #tablaBodegas th {
+          font-weight: 600;
+          font-size: 0.875rem;
+          text-transform: uppercase;
+          color: #1E3A8A;
+          background-color: #F8F9FA;
+        }
+
+        #tablaBodegas td {
+          vertical-align: middle;
+          font-size: 0.9rem;
+        }
+
+        .badge-activo { background-color: #10B981; color: white; padding: 0.35rem 0.65rem; border-radius: 6px; }
+        .badge-inactivo { background-color: #EF4444; color: white; padding: 0.35rem 0.65rem; border-radius: 6px; }
+
+        .table-actions button { margin-right: 0.25rem; padding: 0.375rem 0.75rem; font-size: 0.875rem; }
+
+        .modal-header { border-bottom: none; background: linear-gradient(135deg, #1E3A8A 0%, #2563EB 100%); }
+        .modal-footer { border-top: 1px solid #E5E7EB; background-color: #F8F9FA; }
+
+        .card-bodegas { border-radius: 12px; border: none; }
+        .btn-action { transition: all 0.2s; }
+        .btn-action:hover { transform: translateY(-2px); }
+
+        #map { height: 300px; border-radius: 8px; border: 2px solid #E5E7EB; margin-bottom: 0.5rem; }
+
+        /* Radio buttons personalizados */
+        .radio-group { display: flex; gap: 1rem; margin-bottom: 1.5rem; }
+        .radio-option { flex: 1; }
+        .radio-option input[type="radio"] { display: none; }
+        .radio-option label {
+          display: block;
+          padding: 1rem;
+          border: 2px solid #E5E7EB;
+          border-radius: 8px;
+          cursor: pointer;
+          text-align: center;
+          transition: all 0.3s;
+          font-weight: 500;
+        }
+        .radio-option input[type="radio"]:checked + label {
+          border-color: #1E3A8A;
+          background: rgba(30, 58, 138, 0.05);
+          color: #1E3A8A;
+        }
+        .radio-option label:hover {
+          border-color: #2563EB;
+          background: rgba(37, 99, 235, 0.05);
+        }
+
+        /* Secciones bodeguero */
+        .seccion-bodeguero {
+          padding: 1.5rem;
+          background: #F8F9FA;
+          border-radius: 8px;
+          border: 1px solid #E5E7EB;
+          margin-bottom: 1.5rem;
+        }
+
+        .divider-section {
+          border-top: 2px dashed #E5E7EB;
+          margin: 2rem 0;
+          position: relative;
+        }
+        .divider-section::before {
+          content: "📍";
+          position: absolute;
+          top: -12px;
+          left: 50%;
+          transform: translateX(-50%);
+          background: white;
+          padding: 0 10px;
+          font-size: 1.2rem;
+        }
+        /* AUTOCOMPLETE - LISTA DE SUGERENCIAS */
+        .autocomplete-list {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: #fff;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        z-index: 9999;
+        max-height: 240px;
+        overflow-y: auto;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        display: none;
+      }
+
+      .autocomplete-item {
+        padding: 10px 15px;
+        cursor: pointer;
+        font-size: 0.9rem;
+      }
+
+      .autocomplete-item:hover,
+      .autocomplete-item.active {
+        background: #e9f0ff;
+      }
+      .modal-dialog-scrollable .modal-body {
+        max-height: calc(100vh - 180px);
+        overflow-y: auto;
+        padding-right: 10px;
+      }
+
+      </style>
+    </th:block>
+
+    <div th:fragment="content">
+
+      <div class="page-header-bodegas d-flex align-items-center justify-content-between">
+        <div>
+          <h2 class="fw-bold mb-2">
+            <i class="bi bi-shop me-2" style="color: #1E3A8A;"></i>
+            Gestión de Bodegas
+          </h2>
+          <p class="text-muted mb-0">Administra las bodegas registradas en el sistema</p>
+        </div>
+        <div>
+          <a th:href="@{/admin/dashboard}" class="btn btn-outline-secondary me-2 btn-action">
+            <i class="bi bi-speedometer2 me-1"></i> Dashboard
+          </a>
+          <button class="btn btn-primary btn-action" type="button" onclick="openCreate()">
+            <i class="bi bi-plus-lg me-1"></i> Nueva Bodega
+          </button>
+        </div>
+      </div>
+
+      <div id="alertPlaceholder"></div>
+
+      <div class="card card-bodegas shadow-sm">
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" id="tablaBodegas">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Nombre</th>
+                  <th>Dirección</th>
+                  <th>Distrito</th>
+                  <th>Teléfono</th>
+                  <th>Bodegueros</th>
+                  <th>Estado</th>
+                  <th style="width: 200px;">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td colspan="8" class="text-center text-muted py-4">
+                    <i class="bi bi-arrow-clockwise me-2"></i>Cargando bodegas...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal fade" id="bodegaModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+          <div class="modal-content border-0 shadow-lg">
+            <form id="bodegaForm">
+              <div class="modal-header text-white">
+                <h5 class="modal-title" id="bodegaModalTitle">
+                  <i class="bi bi-shop-window me-2"></i> Nueva Bodega
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+              </div>
+
+              <div class="modal-body p-4">
+                <input type="hidden" id="id" />
+                <input type="hidden" id="isEdit" value="false" />
+
+                <div id="seccionAsignarBodeguero">
+                  <h6 class="mb-3 fw-bold text-primary">
+                    <i class="bi bi-person-badge me-2"></i> Asignar Bodeguero
+                  </h6>
+
+                  <div class="radio-group">
+                    <div class="radio-option">
+                      <input type="radio" name="tipoBodeguero" id="radioExistente" value="existente" checked>
+                      <label for="radioExistente"> 
+                        <i class="bi bi-person-check fs-3 d-block mb-2"></i>
+                        <strong>Bodeguero Existente</strong>
+                        <small class="d-block text-muted">Seleccionar de la lista</small>
+                      </label>
+                    </div>
+                    <div class="radio-option">
+                      <input type="radio" name="tipoBodeguero" id="radioNuevo" value="nuevo">
+                      <label for="radioNuevo">
+                        <i class="bi bi-person-plus fs-3 d-block mb-2"></i>
+                        <strong>Bodeguero Nuevo</strong>
+                        <small class="d-block text-muted">Crear y asignar</small>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div id="seccionBodegueroExistente" class="seccion-bodeguero">
+                    <h6 class="mb-3">
+                      <i class="bi bi-people me-2"></i> Seleccionar Bodeguero
+                    </h6>
+                    <select id="bodegueroExistenteId" class="form-select">
+                      <option value="">Cargando bodegueros...</option>
+                    </select>
+                  </div>
+
+                  <div id="seccionBodegueroNuevo" class="seccion-bodeguero" style="display: none;">
+                    <h6 class="mb-3">
+                      <i class="bi bi-person-plus me-2"></i> Datos del Bodeguero
+                    </h6>
+
+                    <div class="row g-3">
+                      <div class="col-md-8">
+                        <label for="numeroDocumento" class="form-label fw-semibold">
+                          <i class="bi bi-card-text me-1"></i> DNI / RUC <span class="text-danger">*</span>
+                        </label>
+                        <input 
+                          id="numeroDocumento" 
+                          type="text" 
+                          class="form-control" 
+                          placeholder="Ingrese DNI (8 dígitos) o RUC (11 dígitos)"
+                          maxlength="11"
+                        />
+                      </div>
+                      <div class="col-md-4 d-flex align-items-end">
+                        <button 
+                          type="button" 
+                          class="btn btn-secondary w-100" 
+                          onclick="consultarDocumento()"
+                        >
+                          <i class="bi bi-search me-1"></i> Consultar API
+                        </button>
+                      </div>
+
+                      <div class="col-md-12">
+                        <label for="nombreBodeguero" class="form-label fw-semibold">
+                          <i class="bi bi-person me-1"></i> Nombre Completo <span class="text-danger">*</span>
+                        </label>
+                        <input 
+                          id="nombreBodeguero" 
+                          type="text" 
+                          class="form-control" 
+                          placeholder="Se rellenará automáticamente al consultar"
+                          maxlength="100"
+                        />
+                        <small class="text-muted">
+                          <i class="bi bi-info-circle me-1"></i>
+                          Consulta el DNI/RUC para autocompletar el nombre
+                        </small>
+                      </div>
+
+                      <div class="col-md-6">
+                        <label for="emailBodeguero" class="form-label fw-semibold">
+                          <i class="bi bi-envelope me-1"></i> Email <span class="text-danger">*</span>
+                        </label>
+                        <input 
+                          id="emailBodeguero" 
+                          type="email" 
+                          class="form-control" 
+                          placeholder="bodeguero@ejemplo.com"
+                          maxlength="150"
+                        />
+                      </div>
+
+                      <div class="col-md-6">
+                        <label for="telefonoBodeguero" class="form-label fw-semibold">
+                          <i class="bi bi-telephone me-1"></i> Teléfono
+                        </label>
+                        <input 
+                          id="telefonoBodeguero" 
+                          type="tel" 
+                          class="form-control" 
+                          placeholder="999999999"
+                          maxlength="9"
+                        />
+                      </div>
+
+                      <div class="col-md-12">
+                        <label for="passwordBodeguero" class="form-label fw-semibold">
+                          <i class="bi bi-lock me-1"></i> Contraseña <span class="text-danger">*</span>
+                        </label>
+                        <input 
+                          id="passwordBodeguero" 
+                          type="password" 
+                          class="form-control" 
+                          placeholder="Mínimo 6 caracteres"
+                          minlength="6"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div> <div id="seccionEditarOwner" style="display: none;" class="mb-4 p-3 bg-light border rounded">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <label for="bodegueroEditorSelect" class="form-label fw-bold text-primary mb-0">
+                            <i class="bi bi-person-badge-fill me-2"></i> Dueño / Encargado Principal
+                        </label>
+                        <span class="badge bg-warning text-dark">Modo Edición</span>
+                    </div>
+                    
+                    <div class="input-group">
+                        <span class="input-group-text bg-white"><i class="bi bi-person"></i></span>
+                        <select id="bodegueroEditorSelect" class="form-select">
+                            <option value="">Cargando bodegueros...</option>
+                        </select>
+                        <button class="btn btn-outline-secondary" type="button" onclick="cargarBodeguerosParaEdicion()" title="Recargar lista">
+                            <i class="bi bi-arrow-clockwise"></i>
+                        </button>
+                    </div>
+                    <div class="form-text mt-2">
+                        <i class="bi bi-info-circle"></i> Selecciona un usuario existente para asignarlo como responsable de esta bodega.
+                    </div>
+                </div>
+
+                <div class="divider-section"></div>
+
+                <h6 class="mb-3 fw-bold text-primary">
+                  <i class="bi bi-shop me-2"></i> Datos de la Bodega
+                </h6>
+
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <label for="nombre" class="form-label fw-semibold">
+                      <i class="bi bi-tag me-1"></i> Nombre <span class="text-danger">*</span>
+                    </label>
+                    <input id="nombre" type="text" class="form-control" required maxlength="150" placeholder="Ej: Bodega San Isidro" />
+                  </div>
+
+                  <div class="col-md-6">
+                    <label for="telefonoBodega" class="form-label fw-semibold">
+                      <i class="bi bi-telephone me-1"></i> Teléfono de la Bodega
+                    </label>
+                    <input id="telefonoBodega" type="tel" class="form-control" maxlength="15" placeholder="987654321" />
+                  </div>
+
+                  <div class="col-12">
+                    <label class="form-label fw-semibold mb-3">
+                      <i class="bi bi-geo-alt me-1"></i> Ubicación de la Bodega <span class="text-danger">*</span>
+                    </label>
+
+                    <div class="row g-2 mb-3">
+                      <div class="col-md-8">
+                        <div class="input-group">
+                          <span class="input-group-text bg-light">
+                            <i class="bi bi-search"></i>
+                          </span>
+                          <input 
+                            id="direccion" 
+                            type="text" 
+                            class="form-control" 
+                            placeholder="Buscar: Av. Balta 123, Chiclayo..."
+                            required
+                            maxlength="255"
+                          />
+                        </div>
+                      </div>
+                      <div class="col-md-4">
+                        <button 
+                          type="button" 
+                          class="btn btn-primary w-100" 
+                          onclick="buscarDireccionEnMapa()"
+                        >
+                          <i class="bi bi-pin-map me-1"></i> Buscar
+                        </button>
+                      </div>
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                      <div class="col-md-8">
+                        <select id="distritoMapa" class="form-select">
+                          <option value="">O selecciona un distrito para explorar...</option>
+                          <option value="-6.7714,-79.8409">Chiclayo Centro</option>
+                          <option value="-6.7680,-79.8650">José Leonardo Ortiz</option>
+                          <option value="-6.7850,-79.8350">La Victoria</option>
+                          <option value="-6.8350,-79.9300">Pimentel</option>
+                          <option value="-6.7050,-79.9050">Lambayeque</option>
+                          <option value="-6.8750,-79.8700">Monsefú</option>
+                          <option value="-6.7597,-79.9181">Santa Rosa</option>
+                        </select>
+                      </div>
+                      <div class="col-md-4">
+                        <button 
+                          type="button" 
+                          class="btn btn-secondary w-100" 
+                          onclick="irADistrito()"
+                        >
+                          <i class="bi bi-signpost-2 me-1"></i> Ir al distrito
+                        </button>
+                      </div>
+                    </div>
+
+                    <div id="map" class="mb-2"></div>
+                    <small class="text-muted d-block mb-3">
+                      <i class="bi bi-info-circle me-1"></i>
+                      <strong>Tip:</strong> Haz click en el mapa para marcar la ubicación exacta. La dirección se generará automáticamente.
+                    </small>
+
+                    <div class="row g-3">
+                      <div class="col-md-6">
+                        <label for="distrito" class="form-label fw-semibold">
+                          <i class="bi bi-geo me-1"></i> Distrito
+                        </label>
+                        <input id="distrito" type="text" class="form-control" maxlength="100" placeholder="Se detecta automáticamente" />
+                      </div>
+
+                      <div class="col-md-6">
+                        <input type="hidden" id="latitud" />
+                        <input type="hidden" id="longitud" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="col-md-12 mt-3">
+                    <label for="horario" class="form-label fw-semibold">
+                      <i class="bi bi-clock me-1"></i> Horario
+                    </label>
+                    <input id="horario" type="text" class="form-control" maxlength="100" placeholder="Lun-Sab 8am-10pm" />
+                  </div>
+
+                  <div class="col-md-12 mt-3">
+                    <div class="form-check form-switch">
+                      <input id="activo" type="checkbox" class="form-check-input" checked style="width:3rem;height:1.5rem;cursor:pointer;" />
+                      <label for="activo" class="form-check-label fw-semibold ms-2">
+                        <i class="bi bi-check-circle me-1"></i> Bodega activa
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+              </div> <div class="modal-footer">
+                <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">
+                  <i class="bi bi-x-circle me-1"></i> Cancelar
+                </button>
+                <button class="btn btn-primary" type="submit">
+                  <i class="bi bi-check2-circle me-1"></i> Guardar Bodega
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal fade" id="detalleModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+          <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-primary text-white">
+              <h5 class="modal-title">
+                <i class="bi bi-info-circle me-2"></i> Detalle de Bodega
+              </h5>
+              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4" id="detalleContenido">
+              <div class="text-center py-5">
+                <i class="bi bi-arrow-clockwise fs-1 text-muted"></i>
+                <p class="mt-2 text-muted">Cargando información...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <th:block th:fragment="scripts">
+      <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDQA5_ovdrQDcqGO2Vw0LTN6K1Z5ia0kk8&libraries=places&language=es"></script>
+      <script th:src="@{/js/admin/bodegas.js}"></script>
+    </th:block>
+
+  </body>
+</html>

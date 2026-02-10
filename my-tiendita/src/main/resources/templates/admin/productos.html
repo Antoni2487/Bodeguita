@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{admin/layout :: layout(
+        title='Gestión de Productos', 
+        content=~{::content},
+        styles=~{::styles},
+        scripts=~{::scripts}
+      )}">
+<body>
+
+    <!-- Estilos específicos de productos -->
+    <th:block th:fragment="styles">
+        <style>
+            /* Ajustes visuales coherentes con el layout */
+            h2 i { 
+                vertical-align: middle; 
+            }
+            
+            .page-header-productos {
+                margin-bottom: 2rem;
+            }
+            
+            .tabla-productos th {
+                font-weight: 600;
+                font-size: 0.875rem;
+                text-transform: uppercase;
+                color: #1E3A8A;
+                background-color: #F8F9FA;
+            }
+            
+            .tabla-productos td {
+                vertical-align: middle;
+                font-size: 0.9rem;
+            }
+            
+            .producto-imagen {
+                width: 60px;
+                height: 60px;
+                object-fit: cover;
+                border-radius: 8px;
+                border: 2px solid #E5E7EB;
+                transition: transform 0.2s;
+            }
+            
+            .producto-imagen:hover {
+                transform: scale(1.5);
+                cursor: pointer;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            }
+            
+            .no-image-placeholder {
+                width: 60px;
+                height: 60px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background-color: #F3F4F6;
+                border-radius: 8px;
+                border: 2px dashed #D1D5DB;
+                color: #9CA3AF;
+            }
+            
+            .badge-activo {
+                background-color: #10B981;
+                color: white;
+            }
+            
+            .badge-inactivo {
+                background-color: #EF4444;
+                color: white;
+            }
+            
+            
+            .table-actions button {
+                margin-right: 0.25rem;
+                padding: 0.375rem 0.75rem;
+                font-size: 0.875rem;
+            }
+            
+            .modal-header {
+                border-bottom: none;
+                background: linear-gradient(135deg, #1E3A8A 0%, #2563EB 100%);
+            }
+            
+            .modal-footer {
+                border-top: 1px solid #E5E7EB;
+                background-color: #F8F9FA;
+            }
+            
+            .card-productos {
+                border-radius: 12px;
+                border: none;
+            }
+            
+            .btn-action {
+                transition: all 0.2s;
+            }
+            
+            .btn-action:hover {
+                transform: translateY(-2px);
+            }
+            
+            /* Loading state */
+            .table-loading {
+                text-align: center;
+                padding: 3rem;
+                color: #6B7280;
+            }
+            
+            .table-loading i {
+                font-size: 2rem;
+                animation: spin 1s linear infinite;
+            }
+            
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+            
+            /* Preview de imagen */
+            #imagePreviewContainer {
+                min-height: 200px;
+                border: 2px dashed #D1D5DB;
+                border-radius: 12px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background-color: #F9FAFB;
+                position: relative;
+                transition: all 0.3s;
+                cursor: pointer;
+            }
+            
+            #imagePreviewContainer:hover {
+                border-color: #2563EB;
+                background-color: #EFF6FF;
+            }
+            
+            #imagePreviewContainer.dragover {
+                border-color: #2563EB;
+                background-color: #DBEAFE;
+                transform: scale(1.02);
+            }
+            
+            .image-preview-placeholder {
+                text-align: center;
+                color: #6B7280;
+                padding: 2rem;
+            }
+            
+            .image-preview-placeholder i {
+                font-size: 3rem;
+                color: #D1D5DB;
+                margin-bottom: 1rem;
+            }
+            
+            .image-preview-item {
+                position: relative;
+                width: 100%;
+                height: 100%;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                padding: 1rem;
+            }
+            
+            .preview-image {
+                max-width: 100%;
+                max-height: 250px;
+                border-radius: 8px;
+                object-fit: contain;
+            }
+            
+            .preview-info {
+                margin-top: 0.75rem;
+                text-align: center;
+            }
+            
+            .preview-filename {
+                display: block;
+                font-size: 0.875rem;
+                font-weight: 600;
+                color: #374151;
+                margin-bottom: 0.25rem;
+            }
+            
+            .preview-size {
+                display: block;
+                font-size: 0.75rem;
+                color: #6B7280;
+            }
+            
+            .btn-remove-preview {
+                position: absolute;
+                top: 1rem;
+                right: 1rem;
+                width: 32px;
+                height: 32px;
+                border-radius: 50%;
+                background-color: #EF4444;
+                color: white;
+                border: none;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+                transition: all 0.2s;
+                font-size: 1.25rem;
+            }
+            
+            .btn-remove-preview:hover {
+                background-color: #DC2626;
+                transform: scale(1.1);
+            }
+            
+            /* Detalle modal */
+            .detalle-row {
+                padding: 0.75rem 0;
+                border-bottom: 1px solid #F3F4F6;
+            }
+            
+            .detalle-row:last-child {
+                border-bottom: none;
+            }
+            
+            .detalle-label {
+                font-weight: 600;
+                color: #374151;
+                margin-bottom: 0.25rem;
+            }
+            
+            .detalle-value {
+                color: #6B7280;
+            }
+            
+            .detalle-imagen-grande {
+                max-width: 100%;
+                border-radius: 12px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            }
+            
+            /* Filtros */
+            .filtros-productos {
+                background-color: #F9FAFB;
+                padding: 1.5rem;
+                border-radius: 12px;
+                margin-bottom: 1.5rem;
+            }
+            
+            .precio-badge {
+                font-size: 1.1rem;
+                font-weight: 700;
+                color: #1E3A8A;
+            }
+        </style>
+    </th:block>
+
+    <!-- Contenido principal -->
+    <div th:fragment="content">
+        
+        <!-- Header de página -->
+        <div class="page-header-productos d-flex align-items-center justify-content-between">
+            <div>
+                <h2 class="fw-bold mb-2">
+                    <i class="bi bi-box-seam-fill me-2" style="color: #1E3A8A;"></i> 
+                    Gestión de Productos
+                </h2>
+                <p class="text-muted mb-0">Administra el catálogo de productos</p>
+            </div>
+            <div>
+                <a th:href="@{/admin/dashboard}" class="btn btn-outline-secondary me-2 btn-action">
+                    <i class="bi bi-speedometer2 me-1"></i> Dashboard
+                </a>
+                <button class="btn btn-primary btn-action" type="button" onclick="openCreate()">
+                    <i class="bi bi-plus-lg me-1"></i> Nuevo Producto
+                </button>
+            </div>
+        </div>
+
+        <!-- Alertas dinámicas -->
+        <div id="alertPlaceholder"></div>
+
+        <!-- Filtros -->
+        <div class="filtros-productos">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">
+                        <i class="bi bi-search me-1"></i> Buscar
+                    </label>
+                    <input type="text" id="filtroNombre" class="form-control" placeholder="Buscar por nombre...">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">
+                        <i class="bi bi-tag me-1"></i> Categoría
+                    </label>
+                    <select id="filtroCategoria" class="form-select">
+                        <option value="">Todas las categorías</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">
+                        <i class="bi bi-tags me-1"></i> Subcategoría
+                    </label>
+                    <select id="filtroSubcategoria" class="form-select" disabled>
+                        <option value="">Todas las subcategorías</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-semibold">
+                        <i class="bi bi-toggle-on me-1"></i> Estado
+                    </label>
+                    <select id="filtroActivo" class="form-select">
+                        <option value="">Todos</option>
+                        <option value="true">Activos</option>
+                        <option value="false">Inactivos</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabla de productos -->
+        <div class="card card-productos shadow-sm">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0 tabla-productos" id="tablaProductos">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Imagen</th>
+                                <th>Nombre</th>
+                                <th>Categoría</th>
+                                <th>Precio Sugerido</th>
+                                <th>Estado</th>
+                                <th style="width: 200px;">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td colspan="8" class="table-loading">
+                                    <i class="bi bi-arrow-clockwise"></i>
+                                    <p class="mt-2 mb-0">Cargando productos...</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Crear / Editar -->
+        <div class="modal fade" id="productoModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-xl modal-dialog-scrollable">
+                <div class="modal-content border-0 shadow-lg">
+                    <form id="productoForm">
+                        <div class="modal-header text-white">
+                            <h5 class="modal-title" id="productoModalTitle">
+                                <i class="bi bi-box-seam me-2"></i>
+                                Nuevo Producto
+                            </h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                        </div>
+
+                        <div class="modal-body p-4">
+                            <input type="hidden" id="id" />
+                            
+                            <div class="row g-4">
+                                
+                                <!-- Columna Izquierda: Información Básica -->
+                                <div class="col-lg-8">
+                                    <h6 class="fw-bold text-primary mb-3">
+                                        <i class="bi bi-info-circle me-2"></i>
+                                        Información Básica
+                                    </h6>
+                                    
+                                    <div class="row g-3">
+                                        <!-- Nombre -->
+                                        <div class="col-12">
+                                            <label for="nombre" class="form-label fw-semibold">
+                                                <i class="bi bi-box me-1"></i> Nombre del Producto
+                                                <span class="text-danger">*</span>
+                                            </label>
+                                            <input id="nombre" type="text" class="form-control" required maxlength="150" placeholder="Ej: Laptop HP Pavilion 15" />
+                                        </div>
+
+                                        <!-- Descripción -->
+                                        <div class="col-12">
+                                            <label for="descripcion" class="form-label fw-semibold">
+                                                <i class="bi bi-card-text me-1"></i> Descripción
+                                                <span class="text-danger">*</span>
+                                            </label>
+                                            <textarea id="descripcion" class="form-control" required maxlength="500" rows="3" placeholder="Describe el producto..."></textarea>
+                                            <small class="text-muted">Máximo 500 caracteres</small>
+                                        </div>
+
+                                        <!-- Precio-->
+                                        <div class="col-md-6">
+                                            <label for="precio" class="form-label fw-semibold">
+                                                <i class="bi bi-currency-dollar me-1"></i> Precio Sugerido
+                                                <span class="text-danger">*</span>
+                                            </label>
+                                            <input id="precioSugerido" type="number" class="form-control" required step="0.01" min="0" placeholder="0.00" />
+                                        </div>
+
+                                        <!-- Categoría y Subcategoría -->
+                                        <div class="col-md-6">
+                                            <label for="categoria" class="form-label fw-semibold">
+                                                <i class="bi bi-tag me-1"></i> Categoría
+                                                <span class="text-danger">*</span>
+                                            </label>
+                                            <select id="categoria" class="form-select" required>
+                                                <option value="">Seleccione una categoría</option>
+                                            </select>
+                                        </div>
+
+                                        <div class="col-md-6">
+                                            <label for="subcategoria" class="form-label fw-semibold">
+                                                <i class="bi bi-tags me-1"></i> Subcategoría
+                                            </label>
+                                            <select id="subcategoria" class="form-select" disabled>
+                                                <option value="">Seleccione una subcategoría</option>
+                                            </select>
+                                            <small class="text-muted">Selecciona primero una categoría</small>
+                                        </div>
+
+                                        <!-- Estado Activo -->
+                                        <div class="col-md-6 d-flex align-items-end">
+                                            <div class="form-check form-switch">
+                                                <input id="activo" type="checkbox" class="form-check-input" role="switch" checked style="width: 3rem; height: 1.5rem; cursor: pointer;" />
+                                                <label for="activo" class="form-check-label fw-semibold ms-2">
+                                                    <i class="bi bi-check-circle me-1"></i> Producto Activo
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Columna Derecha: Imagen -->
+                                <div class="col-lg-4">
+                                    <h6 class="fw-bold text-primary mb-3">
+                                        <i class="bi bi-image me-2"></i>
+                                        Imagen del Producto
+                                    </h6>
+                                    
+                                    <!-- Input oculto para archivo -->
+                                    <input type="file" id="imagenFile" accept="image/*" style="display: none;" />
+                                    
+                                    <!-- Contenedor de preview -->
+                                    <div id="imagePreviewContainer">
+                                        <div class="image-preview-placeholder">
+                                            <i class="bi bi-image"></i>
+                                            <p>Arrastra una imagen aquí o haz clic para seleccionar</p>
+                                            <small>Formatos: JPG, PNG, GIF, WEBP (máx. 5MB)</small>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+
+                        <div class="modal-footer">
+                            <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">
+                                <i class="bi bi-x-circle me-1"></i> Cancelar
+                            </button>
+                            <button class="btn btn-primary" type="submit">
+                                <i class="bi bi-check2-circle me-1"></i> Guardar Producto
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Ver Detalles -->
+        <div class="modal fade" id="detalleModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                <div class="modal-content border-0 shadow-lg">
+                    <div class="modal-header text-white">
+                        <h5 class="modal-title">
+                            <i class="bi bi-info-circle-fill me-2"></i>
+                            Detalle del Producto
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+
+                    <div class="modal-body p-4" id="detalleContent">
+                        <!-- Se llena dinámicamente con JavaScript -->
+                    </div>
+
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">
+                            <i class="bi bi-x-circle me-1"></i> Cerrar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Scripts específicos -->
+    <th:block th:fragment="scripts">
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        <script th:src="@{/js/admin/imagenes.js}"></script>
+        <script th:src="@{/js/admin/productos.js}"></script>
+    </th:block>
+
+</body>
+</html>

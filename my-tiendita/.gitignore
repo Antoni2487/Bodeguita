@@ -1,36 +1,41 @@
-HELP.md
-target/
-!.mvn/wrapper/maven-wrapper.jar
+# ===============================
+# Compilación y Salidas
+# ===============================
+**/target/
+**/classes/
+**/bin/
+build/
 !**/src/main/**/target/
 !**/src/test/**/target/
-application-local.yml
-*.log
-.DS_Store
 
-## IntelliJ IDEA
-.idea
+# ===============================
+# Configuración Sensible (SEGURIDAD)
+# ===============================
+# Ignora el archivo real en cualquier nivel de carpeta
+**/src/main/resources/application.yml
+**/application-local.yml
+*.log
+
+# ===============================
+# Archivos de Sistema y Editores
+# ===============================
+.DS_Store
+Thumbs.db
+.idea/
 *.iws
 *.iml
 *.ipr
-
-## VS Code
 .vscode/
-
-## STS
-.apt_generated
+.settings/
 .classpath
-.factorypath
 .project
-.settings
+.factorypath
 .springBeans
 .sts4-cache
 
-## NetBeans
-/nbproject/private/
-/nbbuild/
-/dist/
-/nbdist/
-/.nb-gradle/
-build/
+# ===============================
+# Maven Wrapper
+# ===============================
+.mvn/
 !**/src/main/**/build/
 !**/src/test/**/build/

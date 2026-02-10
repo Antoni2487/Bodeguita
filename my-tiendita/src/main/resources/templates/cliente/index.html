@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" 
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{cliente/layout}">
+
+<head>
+    <title>Inicio - TuBodeguita</title>
+    
+    <th:block layout:fragment="styles">
+        <style>
+            /* ========================================
+               HERO SECTION
+            ======================================== */
+            
+            .hero-section {
+                background: linear-gradient(135deg, #D91E6A 0%, #8B0045 100%);
+                padding: 4rem 0;
+                position: relative;
+                overflow: hidden;
+            }
+            
+            .hero-section::before {
+                content: '';
+                position: absolute;
+                top: -50%;
+                right: -20%;
+                width: 600px;
+                height: 600px;
+                background: rgba(255, 215, 0, 0.1);
+                border-radius: 50%;
+            }
+            
+            .hero-section::after {
+                content: '';
+                position: absolute;
+                bottom: -30%;
+                left: -10%;
+                width: 400px;
+                height: 400px;
+                background: rgba(0, 200, 83, 0.1);
+                border-radius: 50%;
+            }
+            
+            .hero-content {
+                position: relative;
+                z-index: 2;
+                color: white;
+            }
+            
+            .hero-title {
+                font-size: 3.5rem;
+                font-weight: 800;
+                line-height: 1.2;
+                text-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+                animation: fadeInUp 0.8s ease;
+            }
+            
+            .hero-subtitle {
+                font-size: 1.3rem;
+                font-weight: 500;
+                margin: 1.5rem 0;
+                color: rgba(255, 255, 255, 0.95);
+                animation: fadeInUp 1s ease;
+            }
+            
+            .hero-cta {
+                background: #FFD700;
+                color: #1A1A1A;
+                font-weight: 700;
+                font-size: 1.2rem;
+                padding: 1rem 3rem;
+                border-radius: 50px;
+                border: none;
+                box-shadow: 0 8px 25px rgba(255, 215, 0, 0.5);
+                transition: all 0.3s ease;
+                animation: fadeInUp 1.2s ease;
+            }
+            
+            .hero-cta:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 12px 35px rgba(255, 215, 0, 0.7);
+                background: #FFE44D;
+            }
+            
+            @keyframes fadeInUp {
+                from {
+                    opacity: 0;
+                    transform: translateY(30px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+            
+            /* ========================================
+               CATEGORÍAS CIRCULARES (Estilo Tambo)
+            ======================================== */
+            
+            .categorias-section {
+                background: white;
+                padding: 3rem 0;
+                box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.05);
+            }
+            
+            .categoria-item {
+                text-align: center;
+                cursor: pointer;
+                transition: transform 0.3s ease;
+            }
+            
+            .categoria-item:hover {
+                transform: translateY(-10px);
+            }
+            
+            .categoria-icon {
+                width: 100px;
+                height: 100px;
+                border-radius: 50%;
+                background: linear-gradient(135deg, #D91E6A 0%, #8B0045 100%);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin: 0 auto 1rem;
+                box-shadow: 0 8px 20px rgba(217, 30, 106, 0.3);
+                transition: all 0.3s ease;
+            }
+            
+            .categoria-item:hover .categoria-icon {
+                transform: rotate(360deg);
+                box-shadow: 0 12px 30px rgba(217, 30, 106, 0.5);
+            }
+            
+            .categoria-icon i {
+                font-size: 3rem;
+                color: white;
+            }
+            
+            .categoria-nombre {
+                font-weight: 700;
+                color: #1A1A1A;
+                font-size: 1rem;
+            }
+            
+            /* ========================================
+               BODEGAS DESTACADAS
+            ======================================== */
+            
+            .bodegas-section {
+                padding: 4rem 0;
+                background: #F5F5F5;
+            }
+            
+            .section-title {
+                font-size: 2.5rem;
+                font-weight: 800;
+                color: #1A1A1A;
+                margin-bottom: 1rem;
+            }
+            
+            .section-subtitle {
+                color: #9E9E9E;
+                font-size: 1.1rem;
+                margin-bottom: 3rem;
+            }
+            
+            .bodega-card {
+                background: white;
+                border-radius: 20px;
+                padding: 2rem;
+                box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+                transition: all 0.3s ease;
+                height: 100%;
+            }
+            
+            .bodega-card:hover {
+                transform: translateY(-10px);
+                box-shadow: 0 15px 40px rgba(217, 30, 106, 0.2);
+            }
+            
+            .bodega-icon-wrapper {
+                width: 80px;
+                height: 80px;
+                border-radius: 50%;
+                background: linear-gradient(135deg, #FFD700 0%, #FFA000 100%);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin: 0 auto 1.5rem;
+            }
+            
+            .bodega-icon-wrapper i {
+                font-size: 2.5rem;
+                color: white;
+            }
+            
+            .bodega-nombre {
+                font-size: 1.5rem;
+                font-weight: 700;
+                color: #1A1A1A;
+                margin-bottom: 0.5rem;
+            }
+            
+            .bodega-direccion {
+                color: #9E9E9E;
+                font-size: 0.95rem;
+                margin-bottom: 1rem;
+            }
+            
+            .bodega-distancia {
+                display: inline-block;
+                background: #E8F5E9;
+                color: #00C853;
+                padding: 0.3rem 1rem;
+                border-radius: 20px;
+                font-weight: 600;
+                font-size: 0.9rem;
+                margin-bottom: 1.5rem;
+            }
+            
+            .btn-ver-bodega {
+                width: 100%;
+                background: linear-gradient(135deg, #D91E6A 0%, #8B0045 100%);
+                color: white;
+                font-weight: 700;
+                padding: 0.8rem;
+                border-radius: 25px;
+                border: none;
+                transition: all 0.3s ease;
+                box-shadow: 0 4px 15px rgba(217, 30, 106, 0.3);
+            }
+            
+            .btn-ver-bodega:hover {
+                transform: translateY(-3px);
+                box-shadow: 0 6px 20px rgba(217, 30, 106, 0.5);
+            }
+            
+            /* ========================================
+               BENEFICIOS
+            ======================================== */
+            
+            .beneficios-section {
+                background: white;
+                padding: 4rem 0;
+            }
+            
+            .beneficio-item {
+                text-align: center;
+                padding: 2rem;
+                transition: transform 0.3s ease;
+            }
+            
+            .beneficio-item:hover {
+                transform: translateY(-5px);
+            }
+            
+            .beneficio-icon {
+                width: 80px;
+                height: 80px;
+                border-radius: 50%;
+                background: linear-gradient(135deg, #D91E6A 0%, #8B0045 100%);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin: 0 auto 1.5rem;
+            }
+            
+            .beneficio-icon i {
+                font-size: 2.5rem;
+                color: white;
+            }
+            
+            .beneficio-titulo {
+                font-size: 1.3rem;
+                font-weight: 700;
+                color: #1A1A1A;
+                margin-bottom: 0.5rem;
+            }
+            
+            .beneficio-descripcion {
+                color: #9E9E9E;
+                font-size: 1rem;
+            }
+            
+            /* Responsive */
+            @media (max-width: 768px) {
+                .hero-title {
+                    font-size: 2.5rem;
+                }
+                
+                .hero-subtitle {
+                    font-size: 1.1rem;
+                }
+                
+                .categoria-icon {
+                    width: 80px;
+                    height: 80px;
+                }
+                
+                .categoria-icon i {
+                    font-size: 2.5rem;
+                }
+            }
+        </style>
+    </th:block>
+</head>
+
+<body>
+    <div layout:fragment="content">
+        
+        <!-- ========================================
+             HERO SECTION
+        ======================================== -->
+        <section class="hero-section">
+            <div class="container">
+                <div class="row align-items-center">
+                    <div class="col-lg-7 hero-content">
+                        <h1 class="hero-title">
+                            🛒 Compra Fácil<br>
+                            y Rápido
+                        </h1>
+                        <p class="hero-subtitle">
+                            Encuentra todo lo que necesitas en las bodegas de tu barrio. 
+                            ¡Entrega en 30 minutos o menos!
+                        </p>
+                        <a href="#bodegas" class="btn hero-cta">
+                            Ver Bodegas Cercanas
+                            <i class="bi bi-arrow-down-circle ms-2"></i>
+                        </a>
+                    </div>
+                    <div class="col-lg-5 text-center d-none d-lg-block">
+                        <img src="https://img.icons8.com/3d-fluency/400/shopping-cart.png" alt="Shopping" style="max-width: 100%; filter: drop-shadow(0 10px 30px rgba(0,0,0,0.3));">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================
+             CATEGORÍAS CIRCULARES
+        ======================================== -->
+        <section class="categorias-section">
+            <div class="container">
+                <div class="row g-4 justify-content-center">
+                    <div class="col-6 col-md-3 col-lg-2">
+                        <div class="categoria-item" onclick="filtrarCategoria('bebidas')">
+                            <div class="categoria-icon">
+                                <i class="bi bi-cup-straw"></i>
+                            </div>
+                            <p class="categoria-nombre">Bebidas</p>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3 col-lg-2">
+                        <div class="categoria-item" onclick="filtrarCategoria('snacks')">
+                            <div class="categoria-icon" style="background: linear-gradient(135deg, #FFD700 0%, #FFA000 100%);">
+                                <i class="bi bi-box2-heart"></i>
+                            </div>
+                            <p class="categoria-nombre">Snacks</p>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3 col-lg-2">
+                        <div class="categoria-item" onclick="filtrarCategoria('lacteos')">
+                            <div class="categoria-icon" style="background: linear-gradient(135deg, #00C853 0%, #00897B 100%);">
+                                <i class="bi bi-egg-fried"></i>
+                            </div>
+                            <p class="categoria-nombre">Lácteos</p>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3 col-lg-2">
+                        <div class="categoria-item" onclick="filtrarCategoria('panaderia')">
+                            <div class="categoria-icon" style="background: linear-gradient(135deg, #FF6B6B 0%, #C92A2A 100%);">
+                                <i class="bi bi-cake2"></i>
+                            </div>
+                            <p class="categoria-nombre">Panadería</p>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3 col-lg-2">
+                        <div class="categoria-item" onclick="filtrarCategoria('limpieza')">
+                            <div class="categoria-icon" style="background: linear-gradient(135deg, #4ECDC4 0%, #0096D9 100%);">
+                                <i class="bi bi-droplet"></i>
+                            </div>
+                            <p class="categoria-nombre">Limpieza</p>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3 col-lg-2">
+                        <div class="categoria-item" th:href="@{/cliente/explorar}">
+                            <div class="categoria-icon" style="background: linear-gradient(135deg, #9C27B0 0%, #6A1B9A 100%);">
+                                <i class="bi bi-three-dots"></i>
+                            </div>
+                            <p class="categoria-nombre">Ver Más</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================
+             BODEGAS DESTACADAS
+        ======================================== -->
+        <section class="bodegas-section" id="bodegas">
+            <div class="container">
+                <div class="text-center">
+                    <h2 class="section-title">📍 Bodegas Cerca de Ti</h2>
+                    <p class="section-subtitle">Selecciona una bodega y empieza a comprar</p>
+                </div>
+
+                <div class="row g-4">
+                    <!-- Bodega Card -->
+                    <div class="col-md-6 col-lg-4" th:each="bodega : ${todasLasBodegas}">
+                        <div class="bodega-card">
+                            <div class="bodega-icon-wrapper">
+                                <i class="bi bi-shop-window"></i>
+                            </div>
+                            <h3 class="bodega-nombre text-center" th:text="${bodega.nombre}">Bodega Norte</h3>
+                            <p class="bodega-direccion text-center">
+                                <i class="bi bi-geo-alt-fill text-danger"></i>
+                                <span th:text="${bodega.direccion}">Jr. Lima 123, Chiclayo</span>
+                            </p>
+                            <div class="text-center">
+                                <span class="bodega-distancia">
+                                    <i class="bi bi-pin-map-fill"></i> 500m
+                                </span>
+                            </div>
+                            <a th:href="@{/cliente/bodega/{id}(id=${bodega.id})}" class="btn btn-ver-bodega">
+                                <i class="bi bi-basket"></i> Ver Productos
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Mensaje si no hay bodegas -->
+                    <div class="col-12" th:if="${#lists.isEmpty(todasLasBodegas)}">
+                        <div class="alert alert-info text-center p-5">
+                            <i class="bi bi-info-circle fs-1 d-block mb-3"></i>
+                            <h4>Aún no tenemos bodegas registradas</h4>
+                            <p>¿Tienes una bodega? <a th:href="@{/trabaja-con-nosotros}" class="fw-bold">¡Únete aquí!</a></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botón Ver Todas en Mapa -->
+                <div class="text-center mt-5" th:unless="${#lists.isEmpty(todasLasBodegas)}">
+                    <a th:href="@{/cliente/explorar}" class="btn hero-cta">
+                        <i class="bi bi-map"></i> Ver Todas en el Mapa
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================
+             BENEFICIOS
+        ======================================== -->
+        <section class="beneficios-section">
+            <div class="container">
+                <div class="row g-4">
+                    <div class="col-md-4">
+                        <div class="beneficio-item">
+                            <div class="beneficio-icon">
+                                <i class="bi bi-lightning-charge-fill"></i>
+                            </div>
+                            <h3 class="beneficio-titulo">Entrega Rápida</h3>
+                            <p class="beneficio-descripcion">
+                                Recibe tu pedido en 30 minutos o menos. ¡Garantizado!
+                            </p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="beneficio-item">
+                            <div class="beneficio-icon" style="background: linear-gradient(135deg, #00C853 0%, #00897B 100%);">
+                                <i class="bi bi-shield-check"></i>
+                            </div>
+                            <h3 class="beneficio-titulo">Compra Segura</h3>
+                            <p class="beneficio-descripcion">
+                                Paga contra entrega o con billetera digital.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="beneficio-item">
+                            <div class="beneficio-icon" style="background: linear-gradient(135deg, #FFD700 0%, #FFA000 100%);">
+                                <i class="bi bi-heart-fill"></i>
+                            </div>
+                            <h3 class="beneficio-titulo">Apoya al Barrio</h3>
+                            <p class="beneficio-descripcion">
+                                Ayuda a crecer a los emprendedores locales de tu comunidad.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <th:block layout:fragment="scripts">
+        <script>
+            function filtrarCategoria(categoria) {
+                // Redirigir a explorar con filtro
+                window.location.href = `/cliente/explorar?categoria=${categoria}`;
+            }
+        </script>
+    </th:block>
+</body>
+</html>

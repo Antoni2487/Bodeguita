@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html
+  xmlns:th="http://www.thymeleaf.org"
+  lang="es"
+  th:fragment="layout (title, content, styles, scripts)"
+>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title
+      th:text="${title != null ? title + ' - BodeguitaSmart' : 'Panel Admin - BodeguitaSmart'}"
+    >
+      Admin Panel
+    </title>
+
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" th:href="@{/css/admin/styles.css}" />
+
+    <th:block th:replace="${styles}"></th:block>
+  </head>
+  <body>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-brand text-center">
+        <img
+          th:src="@{/images/logobodega.png}"
+          class="sidebar-logo"
+          alt="BodeguitaSmart Logo"
+        />
+        <span class="badge">ADMIN</span>
+      </div>
+
+      <ul class="sidebar-menu">
+        <li>
+          <a
+            th:href="@{/admin/dashboard}"
+            th:classappend="${title == 'Dashboard'} ? 'active' : ''"
+          >
+            <i class="bi bi-speedometer2"></i>
+            Dashboard
+          </a>
+        </li>
+        <li>
+          <a
+            th:href="@{/admin/usuarios}"
+            th:classappend="${title == 'Gestión de Usuarios' or title == 'Usuarios'} ? 'active' : ''"
+          >
+            <i class="bi bi-people-fill"></i>
+            Gestión de Usuarios
+          </a>
+        </li>
+        <li>
+          <a
+            th:href="@{/admin/bodegas}"
+            th:classappend="${title == 'Gestión de Bodegas' or title == 'Bodegas'} ? 'active' : ''"
+          >
+            <i class="bi bi-shop-window"></i>
+            Gestión de Bodegas
+          </a>
+        </li>
+        <li>
+          <a
+            th:href="@{/admin/categorias}"
+            th:classappend="${title == 'Gestión de Categorías' or title == 'Categorías'} ? 'active' : ''"
+          >
+            <i class="bi bi-tags-fill"></i>
+            Gestión de Categorías
+          </a>
+        </li>
+        <li>
+          <a
+            th:href="@{/admin/productos}"
+            th:classappend="${title == 'Gestión de Productos' or title == 'Productos'} ? 'active' : ''"
+          >
+            <i class="bi bi-box-seam"></i>
+            Gestión de Productos
+          </a>
+        </li>
+        <li>
+          <a
+            th:href="@{/admin/solicitudes}"
+            th:classappend="${title == 'Solicitudes'} ? 'active' : ''"
+          >
+            <i class="bi bi-envelope-paper-fill"></i>
+            Solicitudes
+            <span th:if="${notificacionesNoLeidasCount > 0}" 
+                   class="badge bg-danger rounded-pill ms-2" 
+                   style="font-size: 0.7em;" 
+                   th:text="${notificacionesNoLeidasCount}"></span>
+          </a>
+        </li>
+      </ul>
+
+      <div class="sidebar-divider"></div>
+
+      <div class="sidebar-footer">
+        <form th:action="@{/logout}" method="post">
+          <button type="submit" class="btn btn-link bdg-sidebar-footer-button">
+            <i class="bi bi-box-arrow-right"></i>
+            <span class="menu-text">Cerrar Sesión</span>
+          </button>
+        </form>
+      </div>
+    </aside>
+
+    <div class="main-content" id="mainContent">
+      
+      <header class="top-header">
+        <button class="toggle-sidebar" id="toggleSidebar">
+          <i class="bi bi-list"></i>
+          <span class="d-none d-sm-inline ms-2">Menú</span>
+        </button>
+
+        <div class="user-info d-flex align-items-center gap-3">
+            
+            <div class="dropdown">
+                <a href="#" class="text-dark position-relative me-2" id="notifDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-bell-fill fs-4"></i>
+                    <span th:if="${notificacionesNoLeidasCount != null and notificacionesNoLeidasCount > 0}" 
+                          th:text="${notificacionesNoLeidasCount}"
+                          class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger border border-light"
+                          style="font-size: 0.6rem;">
+                        0
+                    </span>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end shadow border-0" aria-labelledby="notifDropdown">
+                    <li><h6 class="dropdown-header">Notificaciones</h6></li>
+                    <li>
+                        <a class="dropdown-item d-flex justify-content-between align-items-center" th:href="@{/admin/notificaciones}">
+                            Ver todas
+                            <span class="badge bg-primary rounded-pill" 
+                                  th:text="${notificacionesNoLeidasCount != null ? notificacionesNoLeidasCount : 0}">
+                            </span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="vr h-50 mx-2 text-secondary d-none d-md-block"></div>
+
+            <div class="user-details text-end d-none d-md-block">
+                <span class="user-name d-block fw-bold" style="font-size: 0.9rem;"
+                      th:text="${nombreAdmin != null ? nombreAdmin : 'Administrador'}">
+                    Usuario
+                </span>
+                <span class="user-role text-muted" style="font-size: 0.75rem;">Administrador</span>
+            </div>
+            
+            <div class="user-avatar bg-primary text-white rounded-circle d-flex align-items-center justify-content-center fw-bold shadow-sm"
+                 style="width: 40px; height: 40px;"
+                 th:text="${nombreAdmin != null ? #strings.substring(nombreAdmin, 0, 1).toUpperCase() : 'A'}">
+                A
+            </div>
+        </div>
+      </header>
+
+      <main class="content-wrapper">
+        <th:block th:replace="${content}"></th:block>
+      </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+    <script th:src="@{/js/admin/sidebar.js}"></script>
+
+    <th:block th:replace="${scripts}"></th:block>
+  </body>
+</html>

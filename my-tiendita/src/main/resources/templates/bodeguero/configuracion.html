@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{bodeguero/layout :: layout(
+        title=${title},
+        content=~{::content},
+        styles=~{::styles},
+        scripts=~{::scripts},
+        modals=~{::modals}
+      )}">
+
+<head>
+    <th:block th:fragment="styles">
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+        <link rel="stylesheet" th:href="@{/css/bodeguero/styles.css}" />
+        
+        <style>
+            #mapaUbicacion { 
+                height: 400px; 
+                width: 100%; 
+                border-radius: 12px; 
+                z-index: 1; 
+                border: 2px solid var(--gray-light);
+            }
+            
+            /* Ajustes para Tabs */
+            .nav-tabs { border-bottom: 2px solid var(--gray-light); }
+            .nav-tabs .nav-link { 
+                border: none; 
+                color: var(--gray); 
+                font-weight: 600; 
+                padding: 1rem 1.5rem;
+                transition: all 0.3s;
+            }
+            .nav-tabs .nav-link:hover { color: var(--primary-color); }
+            .nav-tabs .nav-link.active { 
+                color: var(--primary-color); 
+                border-bottom: 3px solid var(--primary-color); 
+                background: transparent; 
+            }
+            
+            .disabled-section { opacity: 0.6; pointer-events: none; }
+        </style>
+    </th:block>
+</head>
+
+<th:block th:fragment="content">
+
+    <div class="productos-header">
+        <div class="header-left">
+            <h2 class="page-title mb-0">
+                <i class="bi bi-gear-fill me-2"></i> Configuración de Mi Bodega
+            </h2>
+        </div>
+        
+        <div class="header-right" th:if="${bodegas != null and bodegas.size() > 1}">
+            <form th:action="@{/bodeguero/configuracion}" method="get" class="d-flex align-items-center">
+                <select class="form-select" name="bodegaId" onchange="this.form.submit()">
+                    <option th:each="b : ${bodegas}" 
+                            th:value="${b.id}" 
+                            th:text="${b.nombre}" 
+                            th:selected="${b.id == bodegaId}"></option>
+                </select>
+            </form>
+        </div>
+    </div>
+
+    <div th:if="${mensaje}" class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i> <strong th:text="${mensaje}"></strong>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <form th:action="@{/bodeguero/configuracion}" th:object="${configuracion}" method="post" id="formConfiguracion">
+        
+        <input type="hidden" th:field="*{id}" />
+        <input type="hidden" name="bodegaId" th:value="${bodegaId}" />
+        <input type="hidden" th:field="*{latitud}" id="inputLat" />
+        <input type="hidden" th:field="*{longitud}" id="inputLng" />
+
+        <div class="filtros-container p-0 overflow-hidden">
+            
+            <div class="px-4 pt-3">
+                <ul class="nav nav-tabs" id="configTabs" role="tablist">
+                    <li class="nav-item">
+                        <button class="nav-link active" id="general-tab" data-bs-toggle="tab" data-bs-target="#general" type="button">
+                            <i class="bi bi-shop me-2"></i> General
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" id="delivery-tab" data-bs-toggle="tab" data-bs-target="#delivery" type="button">
+                            <i class="bi bi-bicycle me-2"></i> Delivery y Mapa
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" id="pagos-tab" data-bs-toggle="tab" data-bs-target="#pagos" type="button">
+                            <i class="bi bi-wallet2 me-2"></i> Pagos
+                        </button>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="p-4">
+                <div class="tab-content" id="configTabsContent">
+                    
+                    <div class="tab-pane fade show active" id="general" role="tabpanel">
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Nombre de la Bodega <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control form-control-lg" th:field="*{nombre}" required>
+                                <div class="text-danger small mt-1" th:if="${#fields.hasErrors('nombre')}" th:errors="*{nombre}"></div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Teléfono / WhatsApp</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-whatsapp"></i></span>
+                                    <input type="text" class="form-control form-control-lg" th:field="*{telefono}">
+                                </div>
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label fw-bold">Dirección Física <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" th:field="*{direccion}" required>
+                                <small class="text-muted">Esta dirección se mostrará a tus clientes.</small>
+                                <div class="text-danger small mt-1" th:if="${#fields.hasErrors('direccion')}" th:errors="*{direccion}"></div>
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label fw-bold">Horario de Atención</label>
+                                <input type="text" class="form-control" th:field="*{horario}" placeholder="Ej: Lunes a Sábado de 7:00am a 10:00pm">
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4 pt-3 border-top">
+                            <button type="submit" class="btn btn-primary btn-add px-5">
+                                <i class="bi bi-save me-2"></i> Guardar Cambios Generales
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="tab-pane fade" id="delivery" role="tabpanel">
+                        <div class="row g-4">
+                            <div class="col-lg-4">
+                                <div class="p-3 bg-light rounded-3 mb-4 border">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" role="switch" id="switchDelivery" th:field="*{realizaDelivery}" style="width: 3em; height: 1.5em;">
+                                        <label class="form-check-label fw-bold ms-2 pt-1" for="switchDelivery">Habilitar Delivery</label>
+                                    </div>
+                                    <p class="small text-muted mt-2 mb-0">Activa esta opción si cuentas con personal para entregar pedidos.</p>
+                                </div>
+
+                                <div id="reglasDeliveryInputs">
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold">Precio por Km</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">S/</span>
+                                            <input type="number" step="0.10" class="form-control" th:field="*{precioPorKm}">
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold">Radio Máximo (Km)</label>
+                                        <div class="input-group">
+                                            <input type="number" step="0.1" class="form-control" th:field="*{radioMaximoKm}">
+                                            <span class="input-group-text">km</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold">Pedido Mínimo</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">S/</span>
+                                            <input type="number" step="1.00" class="form-control" th:field="*{pedidoMinimoDelivery}">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-lg-8">
+                                <label class="form-label fw-bold mb-2">
+                                    <i class="bi bi-geo-alt-fill text-danger"></i> Ubicación en el Mapa
+                                </label>
+                                <div class="alert alert-info py-2 small">
+                                    <i class="bi bi-info-circle"></i> Arrastra el marcador rojo a la ubicación exacta de tu bodega. Esto es vital para calcular el costo de envío.
+                                </div>
+                                
+                                <div id="mapaUbicacion"></div>
+                                
+                                <div class="mt-2 text-end text-muted small">
+                                    Coordenadas: <span id="lblLat">0</span>, <span id="lblLng">0</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4 pt-3 border-top">
+                            <button type="submit" class="btn btn-primary btn-add px-5">
+                                <i class="bi bi-save me-2"></i> Guardar Cambios Generales
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="tab-pane fade" id="pagos" role="tabpanel">
+                        <div class="alert alert-info border-0 shadow-sm mb-4">
+                            <i class="bi bi-info-circle-fill me-2"></i>
+                            Configura tus billeteras digitales para que los clientes puedan pagarte escaneando el QR.
+                        </div>
+
+                        <div class="row g-4">
+                            <div class="col-md-6" th:each="pago : ${metodosPago}">
+                                <div class="card h-100 border-0 shadow-sm">
+                                    <div class="card-header bg-white border-bottom-0 pt-4 px-4 d-flex justify-content-between align-items-center">
+                                        <div class="d-flex align-items-center gap-3">
+                                            <img th:if="${#strings.equalsIgnoreCase(pago.tipoMetodoPago.nombre, 'YAPE')}" 
+                                                 src="https://upload.wikimedia.org/wikipedia/commons/thumb/d/d1/Yape_text_app_icon.png/220px-Yape_text_app_icon.png" width="40">
+                                            <img th:if="${#strings.equalsIgnoreCase(pago.tipoMetodoPago.nombre, 'PLIN')}" 
+                                                 src="https://seeklogo.com/images/P/plin-logo-9D03C523FB-seeklogo.com.png" width="40">
+                                            <i th:if="${!#strings.equalsIgnoreCase(pago.tipoMetodoPago.nombre, 'YAPE') and !#strings.equalsIgnoreCase(pago.tipoMetodoPago.nombre, 'PLIN')}" 
+                                               class="bi bi-cash-coin fs-2 text-success"></i>
+                                            
+                                            <h5 class="mb-0 fw-bold" th:text="${pago.tipoMetodoPago.nombre}">YAPE</h5>
+                                        </div>
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" role="switch" 
+                                                   th:id="'switch-' + ${pago.id}" 
+                                                   th:checked="${pago.activo}">
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="card-body px-4">
+                                        <form th:id="'form-pago-' + ${pago.id}" onsubmit="return false;" enctype="multipart/form-data">
+                                            <div class="mb-3">
+                                                <label class="form-label small fw-bold text-muted">Nombre del Titular</label>
+                                                <input type="text" class="form-control" name="titular" 
+                                                       th:value="${pago.nombreTitular}" placeholder="Ej: Juan Pérez">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label small fw-bold text-muted">Número de Teléfono</label>
+                                                <input type="tel" class="form-control" name="numero" 
+                                                       th:value="${pago.numeroTelefono}" placeholder="999..." maxlength="9">
+                                            </div>
+                                            
+                                            <div class="mb-3">
+                                                <label class="form-label small fw-bold text-muted">Código QR</label>
+                                                <div class="d-flex align-items-center gap-3">
+                                                    <div class="qr-preview-wrapper bg-light rounded border d-flex align-items-center justify-content-center" 
+                                                         style="width: 80px; height: 80px; overflow: hidden;">
+                                                        <img th:if="${pago.imagenQrUrl != null}" th:src="${pago.imagenQrUrl}" 
+                                                             class="img-fluid" th:id="'preview-' + ${pago.id}">
+                                                        <i th:if="${pago.imagenQrUrl == null}" class="bi bi-qr-code text-muted fs-2" 
+                                                           th:id="'icon-' + ${pago.id}" 
+                                                           th:style="${pago.imagenQrUrl != null} ? 'display:none' : ''"></i>
+                                                        <img th:if="${pago.imagenQrUrl == null}" src="" class="img-fluid" 
+                                                             th:id="'preview-' + ${pago.id}" style="display:none">
+                                                    </div>
+                                                    <div class="flex-grow-1">
+                                                        <input type="file" class="form-control form-control-sm" name="qr" accept="image/*"
+                                                               th:onchange="'previsualizarQR(this, ' + ${pago.id} + ')'">
+                                                        <small class="text-muted" style="font-size: 0.75rem;">Sube la imagen de tu QR (JPG/PNG)</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </form>
+                                    </div>
+                                    
+                                    <div class="card-footer bg-white border-top-0 px-4 pb-4">
+                                        <button type="button" class="btn btn-outline-primary w-100" 
+                                                th:onclick="'guardarMetodoPago(' + ${pago.id} + ')'">
+                                            <i class="bi bi-save me-2"></i> Actualizar Datos
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div> </div>
+            </div>
+        </div>
+    </form>
+
+</th:block>
+
+<th:block th:fragment="scripts">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script th:src="@{/js/bodeguero/configuracion.js}"></script>
+</th:block>
+
+</html>

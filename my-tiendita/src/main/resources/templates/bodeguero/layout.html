@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      lang="es"
+      th:fragment="layout (title, content, styles, scripts, modals)">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title th:text="${title != null ? title + ' - BodeguitaSmart' : 'Panel Bodeguero - BodeguitaSmart'}">
+    Panel Bodeguero
+  </title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" th:href="@{/css/bodeguero/styles.css}" />
+
+  <link rel="icon" type="image/gif" th:href="@{/favicon.gif}">
+
+  <th:block th:replace="${styles}"></th:block>
+</head>
+<body class="bg-light">
+
+ <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <aside class="bdg-sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <img src="/images/logobodega.png" class="sidebar-logo" alt="Logo" />
+    </div>
+
+    <ul class="sidebar-menu">
+      <li>
+        <a href="/bodeguero/dashboard" 
+           th:classappend="${title == 'Dashboard'} ? 'active' : ''">
+          <i class="bi bi-speedometer2"></i>
+          <span class="menu-text">Dashboard</span>
+        </a>
+      </li>
+      <li>
+        <a href="/bodeguero/mis_productos" 
+           th:classappend="${title == 'Mis Productos'} ? 'active' : ''">
+          <i class="bi bi-box-seam"></i>
+          <span class="menu-text">Mis Productos</span>
+        </a>
+      </li>
+      <li>
+        <a href="/bodeguero/inventario"
+           th:classappend="${title == 'Inventario'} ? 'active' : ''">
+          <i class="bi bi-clipboard2-pulse"></i>
+          <span class="menu-text">Inventario</span>
+        </a>
+      </li>
+      <li>
+        <a href="/bodeguero/pedidos" 
+           th:classappend="${title == 'Gestión de Pedidos'} ? 'active' : ''">
+          <i class="bi bi-truck"></i>
+          <span class="menu-text">Pedidos</span>
+        </a>
+      </li>
+      <li>
+        <a href="/bodeguero/ventas"
+           th:classappend="${title == 'Gestión de Ventas'} ? 'active' : ''">
+          <i class="bi bi-graph-up-arrow"></i>
+          <span class="menu-text">Ventas</span>
+        </a>
+      </li>
+      <li>
+        <a href="/bodeguero/reportes"
+           th:classappend="${title == 'Reportes'} ? 'active' : ''">
+          <i class="bi bi-file-earmark-bar-graph"></i>
+          <span class="menu-text">Reportes</span>
+        </a>
+      </li>
+      <li>
+        <a th:href="@{/bodeguero/configuracion}" 
+           class="nav-link" 
+           th:classappend="${title == 'Configuración de Bodega'} ? 'active' : ''">
+          <i class="bi bi-gear-fill"></i>
+          <span class="menu-text">Configuración</span>
+        </a>
+      </li>
+    </ul>
+
+    <div class="sidebar-footer">
+      <a href="/logout">
+        <i class="bi bi-box-arrow-right"></i>
+        <span class="menu-text">Cerrar Sesión</span>
+      </a>
+    </div>
+  </aside>
+
+  <div class="bdg-main" id="mainContent">
+
+    <nav class="bdg-topbar">
+      <button class="toggle-sidebar-btn" id="toggleSidebar">
+        <i class="bi bi-list"></i>
+      </button>
+
+      <div class="breadcrumb-container">
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb page-breadcrumb">
+            <li class="breadcrumb-item"><a href="/bodeguero/dashboard">Inicio</a></li>
+            <li class="breadcrumb-item active" aria-current="page" th:text="${title}">Dashboard</li>
+          </ol>
+        </nav>
+      </div>
+
+      <div class="d-flex align-items-center">
+          
+          <div class="dropdown">
+              <button class="notification-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                  <i class="bi bi-bell"></i>
+                  <span id="notifBadge" class="notification-badge">0</span>
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end notification-dropdown shadow" id="notifList">
+                  <li><span class="dropdown-item text-muted text-center small">Cargando...</span></li>
+              </ul>
+          </div>
+
+          <div class="user-info border-start ps-3 ms-2">
+            <div class="user-details">
+              <p class="user-name" th:text="${nombreBodeguero != null ? nombreBodeguero : 'Bodeguero'}">Bodeguero</p>
+              <p class="user-role">Bodeguero</p>
+            </div>
+            <div class="avatar-circle"
+                 th:text="${nombreBodeguero != null ? #strings.substring(nombreBodeguero, 0, 1).toUpperCase() : 'B'}">
+              B
+            </div>
+          </div>
+      </div>
+    </nav>
+
+    <main>
+      <th:block th:replace="${content}"></th:block>
+    </main>
+  </div>
+
+  <th:block th:replace="${modals} ?: ~{}"></th:block>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  
+  <script th:src="@{/js/bodeguero/sidebar.js}"></script>
+  
+  <script th:src="@{/js/bodeguero/notificaciones.js}"></script>
+
+  <th:block th:replace="${scripts}"></th:block>
+</body>
+</html>

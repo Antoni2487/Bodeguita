@@ -1,5 +1,8 @@
 package io.bootify.my_tiendita.usuario;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
@@ -21,7 +24,6 @@ public class UsuarioDTO {
     @UsuarioEmailUnique
     private String email;
 
-    @NotNull
     @Size(max = 255)
     private String password;
 
@@ -31,9 +33,16 @@ public class UsuarioDTO {
     @Size(max = 100)
     private String direccion;
 
-    @NotNull
+    private Double latitud;
+    
+    private Double longitud;
+
     private Boolean activo;
 
-    private Long bodegas;
+    private String rol;
+
+    private String numeroDocumento;
+
+    private Set<Long> bodegas = new HashSet<>();
 
 }

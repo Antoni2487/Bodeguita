@@ -28,10 +28,7 @@ public class ProductoDTO {
     @Digits(integer = 10, fraction = 2)
     @JsonFormat(shape = JsonFormat.Shape.STRING)
     @Schema(type = "string", example = "90.08")
-    private BigDecimal precio;
-
-    @NotNull
-    private Integer stock;
+    private BigDecimal precioSugerido;
 
     @Size(max = 255)
     private String imagen;
@@ -39,8 +36,8 @@ public class ProductoDTO {
     @NotNull
     private Boolean activo;
 
-    private Long bodega;
-
     private Long categoria;
+
+    private Long subcategoria;
 
 }

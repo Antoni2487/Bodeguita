@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" 
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{cliente/layout}">
+
+<head>
+    <title>Trabaja con Nosotros</title>
+    
+    <th:block layout:fragment="styles">
+        <style>
+            /* COLORES DE LA MARCA (Asumidos del index) */
+            :root {
+                --brand-primary: #D91E6A;
+                --brand-dark: #8B0045;
+                --brand-yellow: #FFD700;
+            }
+
+            /* ========================================
+               HERO SECTION (Estilo Index)
+            ======================================== */
+            .hero-section {
+                background: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-dark) 100%);
+                padding: 4rem 0;
+                position: relative;
+                overflow: hidden;
+                color: white;
+                text-align: center;
+                margin-bottom: 2rem;
+            }
+
+            .hero-section::before {
+                content: '';
+                position: absolute;
+                top: -50%;
+                right: -20%;
+                width: 600px;
+                height: 600px;
+                background: rgba(255, 215, 0, 0.1);
+                border-radius: 50%;
+            }
+
+            .hero-title {
+                font-size: 3rem;
+                font-weight: 800;
+                text-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            }
+
+            .hero-subtitle {
+                font-size: 1.2rem;
+                font-weight: 500;
+                color: rgba(255, 255, 255, 0.9);
+            }
+
+            /* ========================================
+               FORM CARD
+            ======================================== */
+            .form-card {
+                border: none;
+                border-radius: 20px;
+                box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+                overflow: hidden;
+            }
+
+            .form-header {
+                background: #f8f9fa;
+                padding: 1.5rem;
+                border-bottom: 1px solid #eee;
+            }
+
+            .form-label {
+                font-weight: 600;
+                color: #444;
+            }
+
+            .form-control:focus {
+                border-color: var(--brand-primary);
+                box-shadow: 0 0 0 0.25rem rgba(217, 30, 106, 0.25);
+            }
+
+            .btn-enviar {
+                background: var(--brand-yellow);
+                color: #1A1A1A;
+                font-weight: 800;
+                border: none;
+                padding: 1rem 2rem;
+                border-radius: 50px;
+                transition: all 0.3s ease;
+                box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
+            }
+
+            .btn-enviar:hover {
+                transform: translateY(-3px);
+                box-shadow: 0 8px 25px rgba(255, 215, 0, 0.6);
+                background: #FFED4D;
+            }
+
+            .section-icon {
+                color: var(--brand-primary);
+                margin-right: 0.5rem;
+            }
+        </style>
+    </th:block>
+</head>
+
+<body>
+    <div layout:fragment="content">
+        
+        <div class="hero-section">
+            <div class="container">
+                <h1 class="hero-title">¡Haz Crecer tu Bodega!</h1>
+                <p class="hero-subtitle">Únete a BodeguitaSmart y recibe pedidos online de tus vecinos.</p>
+            </div>
+        </div>
+
+        <div class="container pb-5">
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    
+                    <div th:if="${mensajeExito}" class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+                        <i class="bi bi-check-circle-fill fs-5 me-2"></i> 
+                        <span th:text="${mensajeExito}"></span>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+
+                    <div class="card form-card">
+                        <div class="form-header text-center">
+                            <h3 class="mb-0 fw-bold text-secondary">Formulario de Afiliación</h3>
+                            <small class="text-muted">Completa tus datos y te contactaremos en 24h</small>
+                        </div>
+                        
+                        <div class="card-body p-4 p-md-5">
+                            <form th:action="@{/cliente/trabaja-con-nosotros}" th:object="${solicitud}" method="post">
+                                
+                                <h5 class="mb-4 pb-2 border-bottom text-primary">
+                                    <i class="bi bi-person-lines-fill section-icon"></i>Datos del Encargado
+                                </h5>
+
+                                <div class="row g-3 mb-4">
+                                    <div class="col-md-6">
+                                        <label for="nombreSolicitante" class="form-label">Nombre Completo</label>
+                                        <input type="text" class="form-control" th:field="*{nombreSolicitante}" 
+                                               th:classappend="${#fields.hasErrors('nombreSolicitante')} ? 'is-invalid' : ''"
+                                               placeholder="Ej: Juan Pérez">
+                                        <div class="invalid-feedback" th:errors="*{nombreSolicitante}">Error en nombre</div>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label for="telefono" class="form-label">Celular / WhatsApp</label>
+                                        <input type="text" class="form-control" th:field="*{telefono}" 
+                                               th:classappend="${#fields.hasErrors('telefono')} ? 'is-invalid' : ''"
+                                               placeholder="Ej: 999 888 777">
+                                        <div class="invalid-feedback" th:errors="*{telefono}">Error en teléfono</div>
+                                    </div>
+
+                                    <div class="col-12">
+                                        <label for="email" class="form-label">Correo Electrónico</label>
+                                        <input type="email" class="form-control" th:field="*{email}" 
+                                               th:classappend="${#fields.hasErrors('email')} ? 'is-invalid' : ''"
+                                               placeholder="juan@ejemplo.com">
+                                        <div class="invalid-feedback" th:errors="*{email}">Error en email</div>
+                                    </div>
+                                </div>
+
+                                <h5 class="mb-4 pb-2 border-bottom text-primary pt-3">
+                                    <i class="bi bi-shop section-icon"></i>Datos del Negocio
+                                </h5>
+
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label for="nombreBodega" class="form-label">Nombre de la Bodega</label>
+                                        <input type="text" class="form-control" th:field="*{nombreBodega}" 
+                                               th:classappend="${#fields.hasErrors('nombreBodega')} ? 'is-invalid' : ''"
+                                               placeholder="Ej: Bodega El Vecino">
+                                        <div class="invalid-feedback" th:errors="*{nombreBodega}">Error en nombre bodega</div>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label for="ruc" class="form-label">RUC o DNI</label>
+                                        <input type="text" class="form-control" th:field="*{ruc}" placeholder="Ej: 10123456789">
+                                    </div>
+
+                                    <div class="col-12">
+                                        <label for="direccionBodega" class="form-label">Dirección Exacta</label>
+                                        <input type="text" class="form-control" th:field="*{direccionBodega}" 
+                                               th:classappend="${#fields.hasErrors('direccionBodega')} ? 'is-invalid' : ''"
+                                               placeholder="Av. Principal 123, Urb. Los Jazmines">
+                                        <div class="invalid-feedback" th:errors="*{direccionBodega}">Error en dirección</div>
+                                    </div>
+                                </div>
+
+                                <div class="d-grid gap-2 mt-5">
+                                    <button type="submit" class="btn btn-enviar btn-lg">
+                                        ENVIAR SOLICITUD <i class="bi bi-send-fill ms-2"></i>
+                                    </button>
+                                </div>
+
+                            </form>
+                        </div>
+                    </div>
+
+                    <div class="text-center mt-4 text-muted">
+                        <small>Al enviar este formulario aceptas nuestros términos y condiciones de afiliación.</small>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

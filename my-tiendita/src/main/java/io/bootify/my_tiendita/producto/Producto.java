@@ -1,8 +1,8 @@
 package io.bootify.my_tiendita.producto;
 
-import io.bootify.my_tiendita.bodega.Bodega;
 import io.bootify.my_tiendita.categoria.Categoria;
-import io.bootify.my_tiendita.detalle_pedido.DetallePedido;
+import io.bootify.my_tiendita.subcategoria.Subcategoria;
+import io.bootify.my_tiendita.producto_bodega.ProductoBodega;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
@@ -26,7 +26,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 
 @Entity
-@Table(name = "Productoes")
+@Table(name = "Productos")
 @EntityListeners(AuditingEntityListener.class)
 @Getter
 @Setter
@@ -43,11 +43,8 @@ public class Producto {
     @Column(nullable = false, length = 500)
     private String descripcion;
 
-    @Column(nullable = false, precision = 10, scale = 2)
-    private BigDecimal precio;
-
-    @Column(nullable = false)
-    private Integer stock;
+    @Column(name = "precio_sugerido", nullable = false, precision = 10, scale = 2)
+    private BigDecimal precioSugerido;
 
     @Column
     private String imagen;
@@ -56,15 +53,15 @@ public class Producto {
     private Boolean activo;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "bodega_id")
-    private Bodega bodega;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "categoria_id")
+    @JoinColumn(name = "categoria_id", nullable = false)
     private Categoria categoria;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "subcategoria_id")
+    private Subcategoria subcategoria;
+
     @OneToMany(mappedBy = "producto")
-    private Set<DetallePedido> detallesPedido = new HashSet<>();
+    private Set<ProductoBodega> productosBodega = new HashSet<>();
 
     @CreatedDate
     @Column(nullable = false, updatable = false)

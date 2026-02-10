@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{admin/layout :: layout(
+        title='Gestión de Usuarios', 
+        content=~{::content},
+        styles=~{::styles},
+        scripts=~{::scripts}
+      )}">
+<body>
+
+    <!-- Estilos específicos de usuarios -->
+    <th:block th:fragment="styles">
+        <style>
+            /* Ajustes visuales coherentes con el layout */
+            h2 i { 
+                vertical-align: middle; 
+            }
+            
+            .page-header-usuarios {
+                margin-bottom: 2rem;
+            }
+            
+            /* Tabs personalizados */
+            .nav-tabs-usuarios {
+                border-bottom: 2px solid #E5E7EB;
+                margin-bottom: 1.5rem;
+            }
+            
+            .nav-tabs-usuarios .nav-link {
+                border: none;
+                color: #6B7280;
+                font-weight: 600;
+                padding: 0.75rem 1.5rem;
+                transition: all 0.3s;
+                position: relative;
+            }
+            
+            .nav-tabs-usuarios .nav-link:hover {
+                color: #1E3A8A;
+                background-color: #F3F4F6;
+            }
+            
+            .nav-tabs-usuarios .nav-link.active {
+                color: #1E3A8A;
+                background-color: transparent;
+            }
+            
+            .nav-tabs-usuarios .nav-link.active::after {
+                content: '';
+                position: absolute;
+                bottom: -2px;
+                left: 0;
+                right: 0;
+                height: 3px;
+                background: linear-gradient(135deg, #1E3A8A 0%, #2563EB 100%);
+                border-radius: 3px 3px 0 0;
+            }
+            
+            .tab-pane {
+                display: none;
+            }
+            
+            .tab-pane.active {
+                display: block;
+            }
+            
+            .tabla-usuarios th {
+                font-weight: 600;
+                font-size: 0.875rem;
+                text-transform: uppercase;
+                color: #1E3A8A;
+                background-color: #F8F9FA;
+            }
+            
+            .tabla-usuarios td {
+                vertical-align: middle;
+                font-size: 0.9rem;
+            }
+            
+            .badge-rol {
+                padding: 0.35rem 0.65rem;
+                font-size: 0.75rem;
+                font-weight: 600;
+                border-radius: 6px;
+            }
+            
+            .badge-admin {
+                background-color: #1E3A8A;
+                color: white;
+            }
+            
+            .badge-bodeguero {
+                background-color: #F59E0B;
+                color: white;
+            }
+            
+            .badge-cliente {
+                background-color: #10B981;
+                color: white;
+            }
+            
+            .badge-activo {
+                background-color: #10B981;
+                color: white;
+            }
+            
+            .badge-inactivo {
+                background-color: #EF4444;
+                color: white;
+            }
+            
+            .table-actions button {
+                margin-right: 0.25rem;
+                padding: 0.375rem 0.75rem;
+                font-size: 0.875rem;
+            }
+            
+            .modal-header {
+                border-bottom: none;
+                background: linear-gradient(135deg, #1E3A8A 0%, #2563EB 100%);
+            }
+            
+            .modal-footer {
+                border-top: 1px solid #E5E7EB;
+                background-color: #F8F9FA;
+            }
+            
+            .card-usuarios {
+                border-radius: 12px;
+                border: none;
+            }
+            
+            .btn-action {
+                transition: all 0.2s;
+            }
+            
+            .btn-action:hover {
+                transform: translateY(-2px);
+            }
+            
+            /* Loading state */
+            .table-loading {
+                text-align: center;
+                padding: 3rem;
+                color: #6B7280;
+            }
+            
+            .table-loading i {
+                font-size: 2rem;
+                animation: spin 1s linear infinite;
+            }
+            
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+            
+            /* Detalle modal */
+            .detalle-row {
+                padding: 0.75rem 0;
+                border-bottom: 1px solid #F3F4F6;
+            }
+            
+            .detalle-row:last-child {
+                border-bottom: none;
+            }
+            
+            .detalle-label {
+                font-weight: 600;
+                color: #374151;
+                margin-bottom: 0.25rem;
+            }
+            
+            .detalle-value {
+                color: #6B7280;
+            }
+            
+            #mapDetalle {
+                height: 300px;
+                border-radius: 8px;
+                margin-top: 1rem;
+            }
+        </style>
+    </th:block>
+
+    <!-- Contenido principal -->
+    <div th:fragment="content">
+        
+        <!-- Header de página -->
+        <div class="page-header-usuarios d-flex align-items-center justify-content-between">
+            <div>
+                <h2 class="fw-bold mb-2">
+                    <i class="bi bi-people-fill me-2" style="color: #1E3A8A;"></i> 
+                    Gestión de Usuarios
+                </h2>
+                <p class="text-muted mb-0">Administra todos los usuarios del sistema</p>
+            </div>
+            <div>
+                <a th:href="@{/admin/dashboard}" class="btn btn-outline-secondary me-2 btn-action">
+                    <i class="bi bi-speedometer2 me-1"></i> Dashboard
+                </a>
+                <button class="btn btn-primary btn-action" type="button" onclick="openCreate()">
+                    <i class="bi bi-plus-lg me-1"></i> Nuevo Usuario
+                </button>
+            </div>
+        </div>
+
+        <!-- Alertas dinámicas -->
+        <div id="alertPlaceholder"></div>
+
+        <!-- Tabs por Rol -->
+        <ul class="nav nav-tabs nav-tabs-usuarios" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="tab-admin" data-bs-toggle="tab" data-bs-target="#tabpane-admin" type="button" role="tab">
+                    <i class="bi bi-shield-fill-check me-2"></i>
+                    Administradores
+                    <span class="badge bg-primary ms-2" id="count-admin">0</span>
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="tab-bodeguero" data-bs-toggle="tab" data-bs-target="#tabpane-bodeguero" type="button" role="tab">
+                    <i class="bi bi-shop me-2"></i>
+                    Bodegueros
+                    <span class="badge bg-warning ms-2" id="count-bodeguero">0</span>
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="tab-cliente" data-bs-toggle="tab" data-bs-target="#tabpane-cliente" type="button" role="tab">
+                    <i class="bi bi-person-fill me-2"></i>
+                    Clientes
+                    <span class="badge bg-success ms-2" id="count-cliente">0</span>
+                </button>
+            </li>
+        </ul>
+
+        <!-- Tab Content -->
+        <div class="tab-content">
+            
+            <!-- Tab Administradores -->
+            <div class="tab-pane fade show active" id="tabpane-admin" role="tabpanel">
+                <div class="card card-usuarios shadow-sm">
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0 tabla-usuarios" id="tablaAdmin">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Nombre</th>
+                                        <th>Email</th>
+                                        <th>Documento</th>
+                                        <th>Teléfono</th>
+                                        <th>Estado</th>
+                                        <th style="width: 200px;">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td colspan="7" class="table-loading">
+                                            <i class="bi bi-arrow-clockwise"></i>
+                                            <p class="mt-2 mb-0">Cargando administradores...</p>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab Bodegueros -->
+            <div class="tab-pane fade" id="tabpane-bodeguero" role="tabpanel">
+                <div class="card card-usuarios shadow-sm">
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0 tabla-usuarios" id="tablaBodeguero">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Nombre</th>
+                                        <th>Email</th>
+                                        <th>Documento</th>
+                                        <th>Teléfono</th>
+                                        <th>Bodegas</th>
+                                        <th>Estado</th>
+                                        <th style="width: 200px;">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td colspan="8" class="table-loading">
+                                            <i class="bi bi-arrow-clockwise"></i>
+                                            <p class="mt-2 mb-0">Cargando bodegueros...</p>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab Clientes -->
+            <div class="tab-pane fade" id="tabpane-cliente" role="tabpanel">
+                <div class="card card-usuarios shadow-sm">
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0 tabla-usuarios" id="tablaCliente">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Nombre</th>
+                                        <th>Email</th>
+                                        <th>Documento</th>
+                                        <th>Teléfono</th>
+                                        <th>Dirección</th>
+                                        <th>Estado</th>
+                                        <th style="width: 200px;">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td colspan="8" class="table-loading">
+                                            <i class="bi bi-arrow-clockwise"></i>
+                                            <p class="mt-2 mb-0">Cargando clientes...</p>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Reemplaza la sección del modal en tu HTML con esto -->
+
+        <!-- Modal Crear / Editar -->
+        <div class="modal fade" id="usuarioModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                <div class="modal-content border-0 shadow-lg">
+                    <form id="usuarioForm">
+                        <div class="modal-header text-white">
+                            <h5 class="modal-title" id="usuarioModalTitle">
+                                <i class="bi bi-person-plus-fill me-2"></i>
+                                Nuevo Usuario
+                            </h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                        </div>
+
+                        <div class="modal-body p-4">
+                            <input type="hidden" id="id" />
+                            
+                            <div class="row g-3">
+                                <!-- Nombre -->
+                                <div class="col-md-6">
+                                    <label for="nombre" class="form-label fw-semibold">
+                                        <i class="bi bi-person me-1"></i> Nombre
+                                        <span class="text-danger">*</span>
+                                    </label>
+                                    <input id="nombre" type="text" class="form-control" required maxlength="100" placeholder="Ej: Juan Pérez" />
+                                </div>
+
+                                <!-- Número de Documento -->
+                                <div class="col-md-6">
+                                    <label for="numeroDocumento" class="form-label fw-semibold">
+                                        <i class="bi bi-card-text me-1"></i> DNI / RUC
+                                    </label>
+                                    <input id="numeroDocumento" type="text" class="form-control" maxlength="11" placeholder="12345678 o 20123456789" />
+                                    <small class="text-muted">8 dígitos (DNI) o 11 dígitos (RUC)</small>
+                                </div>
+
+                                <!-- Email -->
+                                <div class="col-md-6">
+                                    <label for="email" class="form-label fw-semibold">
+                                        <i class="bi bi-envelope me-1"></i> Email
+                                        <span class="text-danger">*</span>
+                                    </label>
+                                    <input id="email" type="email" class="form-control" required maxlength="150" placeholder="usuario@ejemplo.com" />
+                                </div>
+
+                                <!-- Password -->
+                                <div class="col-md-6">
+                                    <label for="password" class="form-label fw-semibold">
+                                        <i class="bi bi-lock me-1"></i> Contraseña
+                                        <span class="text-danger" id="passwordRequired">*</span>
+                                    </label>
+                                    <input id="password" type="password" class="form-control" maxlength="255" placeholder="••••••••" />
+                                    <small class="text-muted" id="passwordHelp" style="display: none;">
+                                        Dejar vacío para mantener la contraseña actual
+                                    </small>
+                                </div>
+
+                                <!-- Teléfono -->
+                                <div class="col-md-6">
+                                    <label for="telefono" class="form-label fw-semibold">
+                                        <i class="bi bi-telephone me-1"></i> Teléfono
+                                    </label>
+                                    <input id="telefono" type="tel" class="form-control" maxlength="9" placeholder="999999999" />
+                                </div>
+
+                                <!-- Dirección -->
+                                <div class="col-md-6">
+                                    <label for="direccion" class="form-label fw-semibold">
+                                        <i class="bi bi-geo-alt me-1"></i> Dirección
+                                    </label>
+                                    <input id="direccion" type="text" class="form-control" maxlength="100" placeholder="Ej: Av. Principal 123, Lima" />
+                                </div>
+
+                                <!-- Rol -->
+                                <div class="col-md-6">
+                                    <label for="rol" class="form-label fw-semibold">
+                                        <i class="bi bi-shield me-1"></i> Rol
+                                        <span class="text-danger">*</span>
+                                    </label>
+                                    <select id="rol" class="form-select" required>
+                                        <option value="">Seleccione un rol</option>
+                                        <option value="ADMIN">Administrador</option>
+                                        <option value="BODEGUERO">Bodeguero</option>
+                                        <option value="CLIENTE">Cliente</option>
+                                    </select>
+                                </div>
+
+                                <!-- Estado Activo -->
+                                <div class="col-md-6 d-flex align-items-end">
+                                    <div class="form-check form-switch">
+                                        <input id="activo" type="checkbox" class="form-check-input" role="switch" checked style="width: 3rem; height: 1.5rem; cursor: pointer;" />
+                                        <label for="activo" class="form-check-label fw-semibold ms-2">
+                                            <i class="bi bi-check-circle me-1"></i> Usuario Activo
+                                        </label>
+                                    </div>
+                                </div>
+                            </div> 
+                        </div>
+
+                        <div class="modal-footer">
+                            <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">
+                                <i class="bi bi-x-circle me-1"></i> Cancelar
+                            </button>
+                            <button class="btn btn-primary" type="submit">
+                                <i class="bi bi-check2-circle me-1"></i> Guardar Usuario
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Ver Detalles -->
+        <div class="modal fade" id="detalleModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                <div class="modal-content border-0 shadow-lg">
+                    <div class="modal-header text-white">
+                        <h5 class="modal-title">
+                            <i class="bi bi-info-circle-fill me-2"></i>
+                            Detalle del Usuario
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+
+                    <div class="modal-body p-4" id="detalleContent">
+                        <!-- Se llena dinámicamente con JavaScript -->
+                    </div>
+
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">
+                            <i class="bi bi-x-circle me-1"></i> Cerrar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Scripts específicos -->
+    <th:block th:fragment="scripts">
+        <script th:src="@{/js/admin/usuarios.js}"></script>
+    </th:block>
+
+</body>
+</html>

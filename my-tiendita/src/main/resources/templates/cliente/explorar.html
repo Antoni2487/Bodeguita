@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" 
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{cliente/layout}">
+
+<head>
+    <title>Explorar Bodegas - TuBodeguita</title>
+    
+    <th:block layout:fragment="styles">
+        <style>
+            /* ========================================
+               LAYOUT PRINCIPAL
+            ======================================== */
+            
+            .explorar-container {
+                display: flex;
+                height: calc(100vh - 120px);
+                background: white;
+            }
+            
+            /* ========================================
+               MAPA
+            ======================================== */
+            
+            .mapa-container {
+                flex: 1;
+                position: relative;
+                background: #E8F5E9;
+            }
+            
+            #map {
+                width: 100%;
+                height: 100%;
+            }
+            
+            /* Controles sobre el mapa */
+            .map-controls {
+                position: absolute;
+                top: 20px;
+                left: 20px;
+                z-index: 1000;
+                display: flex;
+                gap: 10px;
+            }
+            
+            .btn-ubicacion {
+                background: white;
+                border: none;
+                padding: 12px 20px;
+                border-radius: 25px;
+                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+                cursor: pointer;
+                font-weight: 600;
+                transition: all 0.3s ease;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+            
+            .btn-ubicacion:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+                background: #FFD700;
+            }
+            
+            .btn-ubicacion i {
+                font-size: 1.2rem;
+            }
+            
+            /* Marcador personalizado */
+            .custom-marker {
+                background: linear-gradient(135deg, #D91E6A 0%, #8B0045 100%);
+                color: white;
+                padding: 8px 15px;
+                border-radius: 20px;
+                font-weight: 700;
+                box-shadow: 0 4px 15px rgba(217, 30, 106, 0.5);
+                text-align: center;
+                border: 3px solid white;
+                cursor: pointer;
+                transition: all 0.3s ease;
+            }
+            
+            .custom-marker:hover {
+                transform: scale(1.1);
+            }
+            
+            /* Popup personalizado */
+            .leaflet-popup-content-wrapper {
+                border-radius: 15px;
+                box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+                padding: 0;
+                overflow: hidden;
+            }
+            
+            .popup-bodega {
+                padding: 0;
+                margin: 0;
+                min-width: 280px;
+            }
+            
+            .popup-header {
+                background: linear-gradient(135deg, #D91E6A 0%, #8B0045 100%);
+                color: white;
+                padding: 15px;
+                text-align: center;
+            }
+            
+            .popup-header h4 {
+                margin: 0;
+                font-size: 1.3rem;
+                font-weight: 700;
+            }
+            
+            .popup-body {
+                padding: 15px;
+            }
+            
+            .popup-info {
+                margin-bottom: 10px;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                font-size: 0.95rem;
+            }
+            
+            .popup-info i {
+                color: #D91E6A;
+                font-size: 1.2rem;
+            }
+            
+            .popup-footer {
+                padding: 15px;
+                background: #F5F5F5;
+                text-align: center;
+            }
+            
+            .btn-ver-productos {
+                background: linear-gradient(135deg, #D91E6A 0%, #8B0045 100%);
+                color: white;
+                padding: 10px 25px;
+                border-radius: 25px;
+                text-decoration: none;
+                font-weight: 700;
+                display: inline-block;
+                transition: all 0.3s ease;
+                border: none;
+                width: 100%;
+            }
+            
+            .btn-ver-productos:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 6px 20px rgba(217, 30, 106, 0.4);
+                color: white;
+            }
+            
+            /* ========================================
+               SIDEBAR DE BODEGAS
+            ======================================== */
+            
+            .bodegas-sidebar {
+                width: 400px;
+                background: white;
+                border-left: 2px solid #F5F5F5;
+                overflow-y: auto;
+                box-shadow: -5px 0 20px rgba(0, 0, 0, 0.05);
+            }
+            
+            .sidebar-header {
+                background: linear-gradient(135deg, #D91E6A 0%, #8B0045 100%);
+                color: white;
+                padding: 20px;
+                position: sticky;
+                top: 0;
+                z-index: 100;
+            }
+            
+            .sidebar-header h3 {
+                margin: 0;
+                font-weight: 700;
+                font-size: 1.5rem;
+            }
+            
+            .sidebar-search {
+                margin-top: 15px;
+                position: relative;
+            }
+            
+            .sidebar-search input {
+                width: 100%;
+                padding: 12px 45px 12px 15px;
+                border: none;
+                border-radius: 25px;
+                font-size: 0.95rem;
+                background: rgba(255, 255, 255, 0.95);
+            }
+            
+            .sidebar-search input:focus {
+                outline: none;
+                background: white;
+            }
+            
+            .sidebar-search i {
+                position: absolute;
+                right: 15px;
+                top: 50%;
+                transform: translateY(-50%);
+                color: #9E9E9E;
+            }
+            
+            .sidebar-content {
+                padding: 20px;
+            }
+            
+            /* Card de bodega en sidebar */
+            .bodega-item {
+                background: white;
+                border: 2px solid #F5F5F5;
+                border-radius: 15px;
+                padding: 15px;
+                margin-bottom: 15px;
+                cursor: pointer;
+                transition: all 0.3s ease;
+            }
+            
+            .bodega-item:hover {
+                border-color: #D91E6A;
+                box-shadow: 0 5px 20px rgba(217, 30, 106, 0.15);
+                transform: translateX(-5px);
+            }
+            
+            .bodega-item.active {
+                border-color: #D91E6A;
+                background: linear-gradient(135deg, rgba(217, 30, 106, 0.05) 0%, rgba(139, 0, 69, 0.05) 100%);
+            }
+            
+            .bodega-header-item {
+                display: flex;
+                align-items: center;
+                gap: 15px;
+                margin-bottom: 10px;
+            }
+            
+            .bodega-icon-item {
+                width: 50px;
+                height: 50px;
+                background: linear-gradient(135deg, #FFD700 0%, #FFA000 100%);
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-shrink: 0;
+            }
+            
+            .bodega-icon-item i {
+                font-size: 1.5rem;
+                color: white;
+            }
+            
+            .bodega-info-item {
+                flex: 1;
+            }
+            
+            .bodega-nombre-item {
+                font-weight: 700;
+                font-size: 1.1rem;
+                color: #1A1A1A;
+                margin-bottom: 3px;
+            }
+            
+            .bodega-distancia-item {
+                font-size: 0.85rem;
+                color: #00C853;
+                font-weight: 600;
+            }
+            
+            .bodega-direccion-item {
+                font-size: 0.9rem;
+                color: #9E9E9E;
+                margin-bottom: 10px;
+            }
+            
+            .bodega-horario-item {
+                display: flex;
+                align-items: center;
+                gap: 5px;
+                font-size: 0.85rem;
+                color: #4A4A4A;
+            }
+            
+            /* Loading spinner */
+            .loading-spinner {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                text-align: center;
+                z-index: 2000;
+            }
+            
+            .spinner-border {
+                width: 3rem;
+                height: 3rem;
+                border-width: 0.3rem;
+            }
+            
+            /* Responsive */
+            @media (max-width: 768px) {
+                .explorar-container {
+                    flex-direction: column;
+                    height: auto;
+                }
+                
+                .mapa-container {
+                    height: 400px;
+                    order: 2;
+                }
+                
+                .bodegas-sidebar {
+                    width: 100%;
+                    border-left: none;
+                    border-bottom: 2px solid #F5F5F5;
+                    order: 1;
+                    max-height: 400px;
+                }
+                
+                .map-controls {
+                    top: 10px;
+                    left: 10px;
+                }
+                
+                .btn-ubicacion {
+                    padding: 10px 15px;
+                    font-size: 0.9rem;
+                }
+            }
+        </style>
+    </th:block>
+</head>
+
+<body>
+    <div layout:fragment="content">
+        
+        <!-- CONTENEDOR PRINCIPAL -->
+        <div class="explorar-container">
+            
+            <!-- SIDEBAR DE BODEGAS -->
+            <aside class="bodegas-sidebar">
+                <div class="sidebar-header">
+                    <h3><i class="bi bi-shop-window"></i> Bodegas Cercanas</h3>
+                    <div class="sidebar-search">
+                        <input type="text" 
+                               id="search-input" 
+                               placeholder="Buscar bodega..." 
+                               onkeyup="filtrarBodegas()">
+                        <i class="bi bi-search"></i>
+                    </div>
+                </div>
+                
+                <div class="sidebar-content" id="bodegas-list">
+                    <!-- Las bodegas se cargan dinámicamente aquí -->
+                    <div class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Cargando...</span>
+                        </div>
+                        <p class="mt-3 text-muted">Buscando bodegas cercanas...</p>
+                    </div>
+                </div>
+            </aside>
+            
+            <!-- MAPA -->
+            <div class="mapa-container">
+                <!-- Controles sobre el mapa -->
+                <div class="map-controls">
+                    <button class="btn-ubicacion" onclick="obtenerUbicacion()">
+                        <i class="bi bi-crosshair"></i>
+                        <span>Mi Ubicación</span>
+                    </button>
+                </div>
+                
+                <!-- Mapa de Leaflet -->
+                <div id="map"></div>
+                
+                <!-- Loading inicial -->
+                <div class="loading-spinner" id="map-loading">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <p class="mt-3 text-muted">Cargando mapa...</p>
+                </div>
+            </div>
+            
+        </div>
+        
+    </div>
+
+    <th:block layout:fragment="scripts">
+        <script th:inline="javascript">
+            // ========================================
+// VARIABLES GLOBALES
+// ========================================
+let map;
+let userMarker;
+let bodegaMarkers = [];
+let todasLasBodegas = [];
+
+// Coordenadas por defecto (Chiclayo centro) - SOLO si no hay GPS
+const DEFAULT_LAT = -6.7714;
+const DEFAULT_LNG = -79.8411;
+
+// ========================================
+// INICIALIZAR AL CARGAR LA PÁGINA
+// ========================================
+document.addEventListener('DOMContentLoaded', function() {
+    inicializarMapaConUbicacion();
+});
+
+/**
+ * Primero intenta obtener ubicación GPS, luego inicializa el mapa
+ */
+function inicializarMapaConUbicacion() {
+    if (!navigator.geolocation) {
+        console.warn('Geolocalización no disponible');
+        inicializarMapa(DEFAULT_LAT, DEFAULT_LNG, false);
+        return;
+    }
+    
+    // Intentar obtener ubicación GPS
+    navigator.geolocation.getCurrentPosition(
+        // SUCCESS: Se obtuvo ubicación GPS
+        (position) => {
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+            console.log('✅ Ubicación GPS obtenida:', lat, lng);
+            inicializarMapa(lat, lng, true);
+        },
+        // ERROR: No se pudo obtener ubicación
+        (error) => {
+            console.warn('⚠️ No se pudo obtener ubicación GPS:', error.message);
+            console.log('Usando ubicación por defecto (Chiclayo centro)');
+            inicializarMapa(DEFAULT_LAT, DEFAULT_LNG, false);
+        },
+        // OPCIONES
+        {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0
+        }
+    );
+}
+
+// ========================================
+// INICIALIZAR MAPA
+// ========================================
+function inicializarMapa(lat, lng, esUbicacionReal) {
+    console.log('🗺️ Inicializando mapa con:', lat, lng, 'GPS real:', esUbicacionReal);
+    
+    // Si ya existe mapa, lo eliminamos para evitar errores de doble instancia
+    if (map) {
+        map.remove();
+    }
+
+    // Crear mapa
+    map = L.map('map', {
+        center: [lat, lng],
+        zoom: esUbicacionReal ? 16 : 14,
+        zoomControl: false // Opcional: para mover los controles si estorban
+    });
+    
+    // Controles de Zoom en posición estándar
+    L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors',
+        maxZoom: 19
+    }).addTo(map);
+    
+    // Ocultar loading
+    document.getElementById('map-loading').style.display = 'none';
+    
+    // Agregar marcador del usuario
+    agregarMarcadorUsuario(lat, lng, esUbicacionReal);
+    
+    // Cargar bodegas cercanas
+    cargarBodegas(lat, lng);
+    
+    // 🔥 FIX CLAVE: Forzar redibujado después de un breve delay
+    // Esto arregla el problema de que el mapa se vea gris o descentrado
+    setTimeout(() => {
+        map.invalidateSize();
+        map.setView([lat, lng], esUbicacionReal ? 16 : 14);
+    }, 200);
+}
+
+// ========================================
+// BOTÓN "MI UBICACIÓN"
+// ========================================
+function obtenerUbicacion() {
+    if (!navigator.geolocation) {
+        alert('Tu navegador no soporta geolocalización');
+        return;
+    }
+    
+    // Mostrar loading en el botón
+    const btn = event.target.closest('.btn-ubicacion');
+    const originalHTML = btn.innerHTML;
+    btn.innerHTML = '<i class="bi bi-arrow-clockwise"></i> Obteniendo...';
+    btn.disabled = true;
+    
+    navigator.geolocation.getCurrentPosition(
+        (position) => {
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+            
+            console.log('✅ Nueva ubicación:', lat, lng);
+            
+            // IMPORTANTE: Centrar el mapa en la nueva ubicación
+            map.setView([lat, lng], 16);
+            
+            // Actualizar marcador
+            agregarMarcadorUsuario(lat, lng, true);
+            
+            // Recargar bodegas cercanas
+            cargarBodegas(lat, lng);
+            
+            // Restaurar botón
+            btn.innerHTML = originalHTML;
+            btn.disabled = false;
+        },
+        (error) => {
+            console.error('Error obteniendo ubicación:', error);
+            alert('No se pudo obtener tu ubicación. Verifica los permisos del navegador.');
+            
+            // Restaurar botón
+            btn.innerHTML = originalHTML;
+            btn.disabled = false;
+        },
+        {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0
+        }
+    );
+}
+
+// ========================================
+// MARCADOR DE USUARIO
+// ========================================
+function agregarMarcadorUsuario(lat, lng, esUbicacionReal) {
+    // Eliminar marcador anterior si existe
+    if (userMarker) {
+        map.removeLayer(userMarker);
+    }
+    
+    // Color según precisión
+    const color = esUbicacionReal ? '#00C853' : '#FFA726';
+    
+    // Icono personalizado
+    const userIcon = L.divIcon({
+        html: `<div style="background: ${color}; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 4px 10px rgba(0,200,83,0.5);"></div>`,
+        iconSize: [20, 20],
+        className: ''
+    });
+    
+    const mensaje = esUbicacionReal 
+        ? '<div style="text-align: center; font-weight: 600;"><i class="bi bi-geo-alt-fill text-success"></i> Tu ubicación actual</div>'
+        : '<div style="text-align: center; font-weight: 600;"><i class="bi bi-geo-alt text-warning"></i> Ubicación aproximada (Chiclayo centro)</div>';
+    
+    userMarker = L.marker([lat, lng], { icon: userIcon })
+        .addTo(map)
+        .bindPopup(mensaje);
+    
+    console.log('📍 Marcador colocado en:', lat, lng);
+}
+
+// ========================================
+// CARGAR BODEGAS DESDE API
+// ========================================
+async function cargarBodegas(lat, lng) {
+    try {
+        const response = await fetch(`/api/cliente/bodegas/cercanas?lat=${lat}&lng=${lng}&radio=5000`);
+        todasLasBodegas = await response.json();
+        
+        console.log('✅ Bodegas cargadas:', todasLasBodegas.length);
+        
+        // Mostrar en mapa
+        mostrarBodegasEnMapa(todasLasBodegas);
+        
+        // Mostrar en sidebar
+        mostrarBodegasEnSidebar(todasLasBodegas);
+        
+    } catch (error) {
+        console.error('Error cargando bodegas:', error);
+        document.getElementById('bodegas-list').innerHTML = `
+            <div class="alert alert-danger m-3">
+                <i class="bi bi-exclamation-triangle"></i>
+                Error al cargar las bodegas. Intenta de nuevo.
+            </div>
+        `;
+    }
+}
+
+// ========================================
+// MOSTRAR BODEGAS EN MAPA
+// ========================================
+function mostrarBodegasEnMapa(bodegas) {
+    // Limpiar marcadores anteriores
+    bodegaMarkers.forEach(marker => map.removeLayer(marker));
+    bodegaMarkers = [];
+    
+    bodegas.forEach((bodega, index) => {
+        // Icono personalizado
+        const icon = L.divIcon({
+            html: `<div class="custom-marker">
+                       <i class="bi bi-shop"></i> ${bodega.nombre}
+                   </div>`,
+            iconSize: [120, 40],
+            className: ''
+        });
+        
+        // Crear marcador
+        const marker = L.marker([bodega.latitud, bodega.longitud], { icon: icon })
+            .addTo(map)
+            .bindPopup(crearPopupBodega(bodega));
+        
+        // Evento click
+        marker.on('click', () => {
+            highlightBodega(index);
+        });
+        
+        bodegaMarkers.push(marker);
+    });
+}
+
+// ========================================
+// CREAR POPUP DE BODEGA
+// ========================================
+function crearPopupBodega(bodega) {
+    return `
+        <div class="popup-bodega">
+            <div class="popup-header">
+                <h4>${bodega.nombre}</h4>
+            </div>
+            <div class="popup-body">
+                <div class="popup-info">
+                    <i class="bi bi-geo-alt-fill"></i>
+                    <span>${bodega.direccion}</span>
+                </div>
+                <div class="popup-info">
+                    <i class="bi bi-pin-map-fill"></i>
+                    <span>${bodega.distanciaFormateada}</span>
+                </div>
+                ${bodega.telefono ? `
+                    <div class="popup-info">
+                        <i class="bi bi-telephone-fill"></i>
+                        <span>${bodega.telefono}</span>
+                    </div>
+                ` : ''}
+                ${bodega.horario ? `
+                    <div class="popup-info">
+                        <i class="bi bi-clock-fill"></i>
+                        <span>${bodega.horario}</span>
+                    </div>
+                ` : ''}
+            </div>
+            <div class="popup-footer">
+                <a href="/cliente/bodega/${bodega.id}" class="btn-ver-productos">
+                    <i class="bi bi-basket"></i> Ver Productos
+                </a>
+            </div>
+        </div>
+    `;
+}
+
+// ========================================
+// MOSTRAR BODEGAS EN SIDEBAR
+// ========================================
+function mostrarBodegasEnSidebar(bodegas) {
+    const container = document.getElementById('bodegas-list');
+    
+    if (bodegas.length === 0) {
+        container.innerHTML = `
+            <div class="alert alert-info m-3">
+                <i class="bi bi-info-circle"></i>
+                No se encontraron bodegas en esta zona.
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = bodegas.map((bodega, index) => `
+        <div class="bodega-item" id="bodega-${index}" onclick="centrarEnBodega(${index})">
+            <div class="bodega-header-item">
+                <div class="bodega-icon-item">
+                    <i class="bi bi-shop"></i>
+                </div>
+                <div class="bodega-info-item">
+                    <div class="bodega-nombre-item">${bodega.nombre}</div>
+                    <div class="bodega-distancia-item">
+                        <i class="bi bi-pin-map-fill"></i> ${bodega.distanciaFormateada}
+                    </div>
+                </div>
+            </div>
+            <div class="bodega-direccion-item">
+                <i class="bi bi-geo-alt"></i> ${bodega.direccion}
+            </div>
+            ${bodega.horario ? `
+                <div class="bodega-horario-item">
+                    <i class="bi bi-clock"></i> ${bodega.horario}
+                </div>
+            ` : ''}
+        </div>
+    `).join('');
+}
+
+// ========================================
+// INTERACCIÓN SIDEBAR <-> MAPA
+// ========================================
+function centrarEnBodega(index) {
+    const bodega = todasLasBodegas[index];
+    
+    // Centrar mapa
+    map.setView([bodega.latitud, bodega.longitud], 17);
+    
+    // Abrir popup
+    bodegaMarkers[index].openPopup();
+    
+    // Highlight en sidebar
+    highlightBodega(index);
+}
+
+function highlightBodega(index) {
+    // Quitar highlight anterior
+    document.querySelectorAll('.bodega-item').forEach(item => {
+        item.classList.remove('active');
+    });
+    
+    // Agregar nuevo highlight
+    const item = document.getElementById(`bodega-${index}`);
+    if (item) {
+        item.classList.add('active');
+        item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+}
+
+// ========================================
+// FILTRO DE BÚSQUEDA
+// ========================================
+function filtrarBodegas() {
+    const query = document.getElementById('search-input').value.toLowerCase();
+    const bodegasFiltradas = todasLasBodegas.filter(bodega => 
+        bodega.nombre.toLowerCase().includes(query) ||
+        bodega.direccion.toLowerCase().includes(query)
+    );
+    
+    mostrarBodegasEnSidebar(bodegasFiltradas);
+    mostrarBodegasEnMapa(bodegasFiltradas);
+}
+        </script>
+    </th:block>
+</body>
+</html>

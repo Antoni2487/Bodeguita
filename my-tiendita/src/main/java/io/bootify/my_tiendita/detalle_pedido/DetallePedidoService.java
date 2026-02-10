@@ -1,11 +1,9 @@
 package io.bootify.my_tiendita.detalle_pedido;
 
-import io.bootify.my_tiendita.events.BeforeDeletePedido;
-import io.bootify.my_tiendita.events.BeforeDeleteProducto;
-import io.bootify.my_tiendita.pedido.Pedido;
+import io.bootify.my_tiendita.events.BeforeDeletePedido; 
 import io.bootify.my_tiendita.pedido.PedidoRepository;
-import io.bootify.my_tiendita.producto.Producto;
-import io.bootify.my_tiendita.producto.ProductoRepository;
+import io.bootify.my_tiendita.producto_bodega.ProductoBodega;
+import io.bootify.my_tiendita.producto_bodega.ProductoBodegaRepository;
 import io.bootify.my_tiendita.util.NotFoundException;
 import io.bootify.my_tiendita.util.ReferencedException;
 import java.util.List;
@@ -13,24 +11,23 @@ import org.springframework.context.event.EventListener;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
-
 @Service
 public class DetallePedidoService {
 
     private final DetallePedidoRepository detallePedidoRepository;
     private final PedidoRepository pedidoRepository;
-    private final ProductoRepository productoRepository;
+    private final ProductoBodegaRepository productoBodegaRepository;
 
     public DetallePedidoService(final DetallePedidoRepository detallePedidoRepository,
-            final PedidoRepository pedidoRepository, final ProductoRepository productoRepository) {
+            final PedidoRepository pedidoRepository, final ProductoBodegaRepository productoBodegaRepository) {
         this.detallePedidoRepository = detallePedidoRepository;
         this.pedidoRepository = pedidoRepository;
-        this.productoRepository = productoRepository;
+        this.productoBodegaRepository = productoBodegaRepository;
     }
 
     public List<DetallePedidoDTO> findAll() {
-        final List<DetallePedido> detallePedidoes = detallePedidoRepository.findAll(Sort.by("id"));
-        return detallePedidoes.stream()
+        final List<DetallePedido> detallePedidos = detallePedidoRepository.findAll(Sort.by("id"));
+        return detallePedidos.stream()
                 .map(detallePedido -> mapToDTO(detallePedido, new DetallePedidoDTO()))
                 .toList();
     }
@@ -60,26 +57,58 @@ public class DetallePedidoService {
         detallePedidoRepository.delete(detallePedido);
     }
 
+    // ==========================================
+    // MAPPERS ACTUALIZADOS
+    // ==========================================
+
     private DetallePedidoDTO mapToDTO(final DetallePedido detallePedido,
             final DetallePedidoDTO detallePedidoDTO) {
-        detallePedidoDTO.setId(detallePedido.getId());
+        
+        // Mapeo básico
+        // Nota: Como en el paso anterior definimos el DTO sin campo ID para el carrito,
+        // si este DTO tiene ID, lo seteamos. Si no, comenta esta línea.
+        // detallePedidoDTO.setId(detallePedido.getId()); 
+
         detallePedidoDTO.setCantidad(detallePedido.getCantidad());
         detallePedidoDTO.setSubtotal(detallePedido.getSubtotal());
-        detallePedidoDTO.setPedido(detallePedido.getPedido() == null ? null : detallePedido.getPedido().getId());
-        detallePedidoDTO.setProducto(detallePedido.getProducto() == null ? null : detallePedido.getProducto().getId());
+        
+        // Mapeo de relación ProductoBodega
+        if (detallePedido.getProductoBodega() != null) {
+            detallePedidoDTO.setProductoBodegaId(detallePedido.getProductoBodega().getId());
+            
+            // Info extra visual (si el DTO lo soporta)
+            if (detallePedido.getProductoBodega().getProducto() != null) {
+                detallePedidoDTO.setProductoNombre(detallePedido.getProductoBodega().getProducto().getNombre());
+            }
+            detallePedidoDTO.setPrecioUnitario(detallePedido.getPrecioUnitario());
+        }
+        
         return detallePedidoDTO;
     }
 
     private DetallePedido mapToEntity(final DetallePedidoDTO detallePedidoDTO,
             final DetallePedido detallePedido) {
+        
         detallePedido.setCantidad(detallePedidoDTO.getCantidad());
         detallePedido.setSubtotal(detallePedidoDTO.getSubtotal());
-        final Pedido pedido = detallePedidoDTO.getPedido() == null ? null : pedidoRepository.findById(detallePedidoDTO.getPedido())
-                .orElseThrow(() -> new NotFoundException("pedido not found"));
-        detallePedido.setPedido(pedido);
-        final Producto producto = detallePedidoDTO.getProducto() == null ? null : productoRepository.findById(detallePedidoDTO.getProducto())
-                .orElseThrow(() -> new NotFoundException("producto not found"));
-        detallePedido.setProducto(producto);
+        
+        // Mapeo de ProductoBodega (Usamos el ID del DTO)
+        if (detallePedidoDTO.getProductoBodegaId() != null && 
+            (detallePedido.getProductoBodega() == null || !detallePedido.getProductoBodega().getId().equals(detallePedidoDTO.getProductoBodegaId()))) {
+            
+            final ProductoBodega productoBodega = productoBodegaRepository.findById(detallePedidoDTO.getProductoBodegaId())
+                    .orElseThrow(() -> new NotFoundException("ProductoBodega no encontrado"));
+            detallePedido.setProductoBodega(productoBodega);
+            
+            // Si es creación y no tiene precio, usamos el actual
+            if (detallePedido.getPrecioUnitario() == null) {
+                detallePedido.setPrecioUnitario(productoBodega.getPrecioBodeguero());
+            }
+        }
+        
+        // NOTA: No mapeamos 'Pedido' aquí porque lo retiramos del DTO para simplificar el carrito.
+        // La creación de detalles se maneja principalmente desde PedidoService.
+        
         return detallePedido;
     }
 
@@ -93,16 +122,5 @@ public class DetallePedidoService {
             throw referencedException;
         }
     }
-
-    @EventListener(BeforeDeleteProducto.class)
-    public void on(final BeforeDeleteProducto event) {
-        final ReferencedException referencedException = new ReferencedException();
-        final DetallePedido productoDetallePedido = detallePedidoRepository.findFirstByProductoId(event.getId());
-        if (productoDetallePedido != null) {
-            referencedException.setKey("producto.detallePedido.producto.referenced");
-            referencedException.addParam(productoDetallePedido.getId());
-            throw referencedException;
-        }
-    }
-
+    
 }
